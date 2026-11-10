@@ -1,122 +1,56 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useMemo, useState } from 'react';
+import {
+  ArrowLeftRight, ArrowRight, Bell, BookOpen, Check, CheckCheck, ChevronDown, Code2,
+  Compass, Filter, Guitar, HelpCircle, Home, LogOut, Mail, Menu, MessageCircle,
+  MoreHorizontal, Paperclip, Search, Send, Settings, Smile, Star, Users, X, Zap,
+  UserRound, Sparkles, Clock3, Heart, Plus, SlidersHorizontal
+} from 'lucide-react';
 
-function App() {
-  const [count, setCount] = useState(0)
+const team = [
+  ['Sahana B','Lead UI/UX & Frontend Designer','SB'],
+  ['Rithesh L Prabhu','Full-Stack Developer & Tech Lead','RP'],
+  ['Rohan R','Backend Engineer & System Architect','RR'],
+  ['Sachi Singh','Product Manager & QA Lead','SS'],
+  ['Rithika R','AI/ML Specialist & Cloud Engineer','RR']
+];
+const people = [
+  {id:1,name:'Anita Desai',role:'Design Student',rating:'4.9',sessions:24,match:98,teach:['Figma','Illustrator'],learn:['React','CSS'],bio:'UI/UX student passionate about design. Looking to learn React in exchange for design skills.',color:'coral',initials:'AD'},
+  {id:2,name:'Karthik Raj',role:'DevOps Engineer',rating:'4.8',sessions:18,match:85,teach:['AWS','Docker'],learn:['Python','Node.js'],bio:'Cloud enthusiast. Can teach AWS and DevOps basics. Wants to learn Python for automation.',color:'blue',initials:'KR'},
+  {id:3,name:'Meera Patel',role:'Illustrator',rating:'5.0',sessions:31,match:92,teach:['Procreate','Drawing'],learn:['Photography','Figma'],bio:'Digital artist who loves helping beginners find their creative style.',color:'peach',initials:'MP'},
+  {id:4,name:'Rohit Verma',role:'Software Developer',rating:'4.7',sessions:16,match:89,teach:['Java','DSA'],learn:['UI Design','Figma'],bio:'Backend developer keen to exchange coding knowledge for product design skills.',color:'green',initials:'RV'}
+];
+const chats = [
+  {id:1,name:'Anita Desai',initials:'AD',color:'coral',preview:"Sounds good! Let's schedule...",time:'10:24 AM',unread:2},
+  {id:2,name:'Karthik Raj',initials:'KR',color:'blue',preview:"I've shared the Docker resources.",time:'Yesterday'},
+  {id:3,name:'Meera Patel',initials:'MP',color:'peach',preview:'Can we do the session on Sunday?',time:'Oct 25'},
+  {id:4,name:'Rohit Verma',initials:'RV',color:'green',preview:'Thanks for the session!',time:'Oct 22'}
+];
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+function Logo({small=false}) { return <div className="brand"><div className="brand-mark"><ArrowLeftRight size={small?18:23}/><span className="brand-dot">✦</span></div><div><div className="brand-name">Skill<span>Swap</span></div>{!small&&<div className="brand-tag">Never stop learning.</div>}</div></div>; }
+function Avatar({initials,color='blue',size='md',online=false}) { return <div className={`avatar ${color} ${size}`}>{initials}{online&&<i/>}</div>; }
+function Pill({children,tone='purple'}) { return <span className={`pill ${tone}`}>{children}</span>; }
+function TeamModal({onClose}) { return <div className="modal-backdrop" onMouseDown={onClose}><div className="team-modal" onMouseDown={e=>e.stopPropagation()}><button className="icon-btn close" onClick={onClose}><X/></button><div className="eyebrow"><Sparkles size={15}/> THE PEOPLE BEHIND THE PLATFORM</div><h2>Meet our <span className="gradient-text">team.</span></h2><p className="muted">A little creativity, a lot of collaboration, and one shared mission.</p><div className="team-grid">{team.map((m,i)=><div className="team-card" key={m[0]}><div className={`team-avatar av-${i}`}>{m[2]}</div><h3>{m[0]}</h3><p>{m[1]}</p><span className="team-number">0{i+1}</span></div>)}</div><div className="team-foot"><Heart size={15}/> Built together, for learners everywhere.</div></div></div>; }
 
-      <div className="ticks"></div>
+function Login({onLogin,onSignUp}) { const [email,setEmail]=useState(''); const [password,setPassword]=useState(''); const [mode,setMode]=useState('login'); return <div className="login-page"><div className="login-orb orb-one"/><div className="login-orb orb-two"/><div className="login-card"><div className="login-logo"><div className="login-symbol"><span>Skills you want</span><ArrowLeftRight size={48}/><span>Skills you have</span></div><Logo/><p>Trade what you know. Learn what you don't.</p></div><div className="login-heading"><h1>{mode==='login'?'Welcome back':'Create your account'}</h1><p>{mode==='login'?'Your next skill starts with a connection.':'Join a community that grows together.'}</p></div><form onSubmit={e=>{e.preventDefault();onLogin(email||'hello@skillswap.com')}}><label>Email address</label><input required type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/><label>Password</label><input required minLength="4" type="password" placeholder="Enter your password" value={password} onChange={e=>setPassword(e.target.value)}/><button className="btn gradient-btn full" type="submit">{mode==='login'?'Login':'Sign up'} <ArrowRight size={17}/></button></form><div className="login-switch">{mode==='login'?"Don't have an account?":"Already have an account?"} <button onClick={()=>setMode(mode==='login'?'signup':'login')}>{mode==='login'?'Sign up':'Login'}</button></div><div className="login-terms">By continuing, you agree to our Terms of Service and Privacy Policy.</div></div><div className="login-bottom">© 2026 SkillSwap · Learn freely, grow together</div></div>; }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+function HeroArt(){return <div className="hero-art"><div className="art-sun"/><div className="art-orbit orbit-a"/><div className="art-orbit orbit-b"/><div className="art-skill guitar-card"><Guitar size={40}/></div><div className="art-skill code-card"><Code2 size={42}/></div><div className="art-person person-one"><div className="hair"/><div className="face"><span className="eye e1"/><span className="eye e2"/><span className="smile"/></div><div className="body orange-body"/><div className="arm arm-one"/><div className="guitar-neck"/></div><div className="art-person person-two"><div className="hair hair-two"/><div className="face glasses"><span className="eye e1"/><span className="eye e2"/><span className="smile"/></div><div className="body navy-body"/><div className="laptop"><Code2 size={35}/></div></div><div className="art-caption">Share a skill. Find your people.</div></div>}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
-}
+function Sidebar({view,setView,logout}) { const nav=[['dashboard','Dashboard',Home],['messages','Messages',Mail],['rooms','Skill Rooms',Users],['settings','Settings',Settings],['invite','Invite and Earn',ArrowLeftRight]]; return <aside className="sidebar"><div className="side-brand"><Logo small/><button className="icon-btn mobile-menu"><Menu/></button></div><nav>{nav.map(([id,label,Icon])=><button key={id} className={`side-link ${view===id?'active':''}`} onClick={()=>setView(id)}><Icon size={19}/><span>{label}</span>{id==='messages'&&<i className="nav-dot"/>}</button>)}</nav><div className="side-spacer"/><button className={`side-link faq-link ${view==='faq'?'active':''}`} onClick={()=>setView('faq')}><HelpCircle size={19}/><span>FAQ</span></button><div className="side-divider"/><button className="side-link logout" onClick={logout}><LogOut size={19}/><span>Logout</span></button><div className="referral-card"><div className="ref-icon"><ArrowLeftRight size={20}/></div><div><strong>1,245</strong><span>Total Referrals</span></div><Sparkles className="ref-spark" size={16}/></div></aside>; }
 
-export default App
+function Topbar({setView,onTeam}) { return <header className="topbar"><button className="top-brand" onClick={()=>setView('dashboard')}><Logo small/></button><nav className="top-links"><a href="#benefits">Benefits</a><a href="#how">How it works</a><a href="#about">About us</a><button onClick={onTeam}>Our Team</button></nav><div className="top-actions"><button className="text-action" onClick={()=>setView('login')}>Sign up</button><button className="text-action" onClick={()=>setView('login')}>Login</button><button className="btn waitlist" onClick={()=>setView('discover')}>Join Waitlist</button></div></header>; }
+
+function Dashboard({setView,onTeam}) {return <><Topbar setView={setView} onTeam={onTeam}/><section className="hero" id="about"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-line"/> LEARN SOMETHING. TEACH SOMETHING.</div><h1>Swap Skills,<br/><span className="gradient-text">Spark Growth.</span></h1><p>Connect with people around the world to teach and learn new skills—no money needed, just passion and knowledge.</p><div className="hero-buttons"><button className="btn navy-btn" onClick={()=>setView('discover')}>JOIN THE COMMUNITY <ArrowRight size={17}/></button><button className="play-link" onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})}><span>▶</span> See how it works</button></div><div className="hero-proof"><div className="proof-avatars"><Avatar initials="AD" color="coral" size="xs"/><Avatar initials="KR" color="blue" size="xs"/><Avatar initials="MP" color="peach" size="xs"/></div><div><strong>2,400+ curious minds</strong><span>learning better, together</span></div><div className="proof-stars"><Star size={14} fill="currentColor"/> 4.9/5</div></div></div><HeroArt/></section><section className="benefits" id="benefits"><div className="section-heading"><div className="eyebrow">WHY SKILLSWAP?</div><h2>Good things happen when <span className="gradient-text">knowledge moves.</span></h2></div><div className="benefit-grid"><div className="benefit-card"><div className="benefit-icon pink-icon"><ArrowLeftRight/></div><h3>Give & get</h3><p>Exchange your strengths for skills you've always wanted to learn.</p></div><div className="benefit-card"><div className="benefit-icon blue-icon"><Users/></div><h3>Real connections</h3><p>Meet curious people who make learning feel collaborative.</p></div><div className="benefit-card"><div className="benefit-icon yellow-icon"><Zap/></div><h3>Always growing</h3><p>Build confidence through practical, peer-to-peer sessions.</p></div></div></section><section className="how-section" id="how"><div><div className="eyebrow">SIMPLE BY DESIGN</div><h2>Your next skill is <span className="gradient-text">three steps away.</span></h2></div><div className="how-steps"><div><b>01</b><Compass/><h3>Find your match</h3><p>Discover people whose skills complement yours.</p></div><div><b>02</b><ArrowLeftRight/><h3>Make an exchange</h3><p>Agree on what you'll teach and what you'll learn.</p></div><div><b>03</b><BookOpen/><h3>Learn together</h3><p>Meet, share knowledge, and celebrate progress.</p></div></div></section><footer className="main-footer"><Logo small/><span>Never stop learning. © 2026 SkillSwap</span><button onClick={onTeam}>Meet the team <ArrowRight size={14}/></button></footer></>}
+
+function Discover({onOffer}) { const [query,setQuery]=useState(''); const [filter,setFilter]=useState(false); const [skill,setSkill]=useState(''); const filtered=useMemo(()=>people.filter(p=>(p.name+p.role+p.teach.join(' ')+p.learn.join(' ')+p.bio).toLowerCase().includes(query.toLowerCase())&&(!skill||p.teach.includes(skill)||p.learn.includes(skill))),[query,skill]); return <div className="page-content"><div className="page-title-row"><div><div className="eyebrow">YOUR NEXT COLLABORATION</div><h1>Discover Your Next <span className="gradient-text">Skill Partner.</span></h1><p className="muted">Exchange knowledge, learn new skills, and grow together.</p></div><div className="match-count"><Users size={17}/><strong>{filtered.length}</strong> great matches</div></div><div className="search-row"><div className="search-box"><Search size={19}/><input placeholder="I want to learn..." value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button onClick={()=>setQuery('')}><X size={15}/></button>}</div><button className={`btn filter-btn ${filter?'selected':''}`} onClick={()=>setFilter(!filter)}><SlidersHorizontal size={17}/> Filters <ChevronDown size={15}/></button></div>{filter&&<div className="filter-panel"><span>I'm interested in</span>{['React','Figma','Python','CSS','Docker','Illustrator'].map(s=><button key={s} className={skill===s?'chosen':''} onClick={()=>setSkill(skill===s?'':s)}>{s}</button>)}<button className="clear-filter" onClick={()=>{setSkill('');setQuery('')}}>Clear all</button></div>}<div className="results-heading"><h2>Top Recommended Matches</h2><span>Showing {filtered.length} results</span></div><div className="matches-grid">{filtered.map(p=><article className="match-card" key={p.id}><div className="match-top"><Avatar initials={p.initials} color={p.color} size="lg"/><div className="match-person"><h3>{p.name}</h3><span>{p.role}</span><div className="rating"><Star size={13} fill="currentColor"/> {p.rating} <span>({p.sessions} sessions)</span></div></div><Pill tone="match">{p.match}% Match</Pill></div><div className="skill-columns"><div><label>CAN TEACH</label><div className="skill-pills">{p.teach.map(s=><Pill key={s} tone="teach">{s}</Pill>)}</div></div><div><label>WANTS TO LEARN</label><div className="skill-pills">{p.learn.map(s=><Pill key={s} tone="learn">{s}</Pill>)}</div></div></div><p className="match-bio">{p.bio}</p><div className="match-actions"><button className="btn outline-btn" onClick={()=>alert(`${p.name}'s profile\n\n${p.bio}\n\nCan teach: ${p.teach.join(', ')}\nWants to learn: ${p.learn.join(', ')}`)}>View Profile</button><button className="btn blue-btn" onClick={()=>onOffer(p)}><ArrowLeftRight size={16}/> Send Exchange Offer</button></div></article>)}</div>{filtered.length===0&&<div className="empty-results"><Search size={28}/><h3>No matches just yet</h3><p>Try another skill or clear your filters.</p></div>}</div>; }
+
+function OfferModal({person,onClose,onSend}) { const [teach,setTeach]=useState(person.learn[0]||'React'); const [learn,setLearn]=useState(person.teach[0]||'Figma'); const [note,setNote]=useState(`Hi ${person.name.split(' ')[0]}! I'd love to exchange skills and learn together.`); return <div className="modal-backdrop" onMouseDown={onClose}><div className="offer-modal" onMouseDown={e=>e.stopPropagation()}><button className="icon-btn close" onClick={onClose}><X/></button><div className="eyebrow">START SOMETHING GOOD</div><h2>Send an exchange offer</h2><div className="offer-to"><Avatar initials={person.initials} color={person.color}/><div><strong>{person.name}</strong><span>{person.role}</span></div></div><div className="offer-fields"><label>You will teach</label><select value={teach} onChange={e=>setTeach(e.target.value)}>{person.learn.concat(['JavaScript','Communication']).map(x=><option key={x}>{x}</option>)}</select><div className="exchange-icon"><ArrowLeftRight/></div><label>You'll learn</label><select value={learn} onChange={e=>setLearn(e.target.value)}>{person.teach.concat(['UI Design','Public Speaking']).map(x=><option key={x}>{x}</option>)}</select><label>Add a note</label><textarea value={note} onChange={e=>setNote(e.target.value)}/></div><button className="btn blue-btn full" onClick={()=>onSend({person,teach,learn,note})}>Send offer <ArrowRight size={16}/></button></div></div>; }
+
+function Offers({openChat,offers}) { const [tab,setTab]=useState('Active Exchanges'); const tabs=['Received Offers (2)','Sent Offers (1)','Active Exchanges (3)','Completed (5)']; const base=[{name:'Anita Desai',initials:'AD',color:'coral',date:'Started 2 days ago',you:'React',they:'Figma'},{name:'Karthik Raj',initials:'KR',color:'blue',date:'Started 4 days ago',you:'Python',they:'Docker'},{name:'Meera Patel',initials:'MP',color:'peach',date:'Started 1 week ago',you:'Photography',they:'Illustration'}]; const list=tab.startsWith('Active')?base:tab.startsWith('Received')?[{...base[0],date:'Received 2 hours ago',status:'Pending'},{...base[1],date:'Received yesterday',status:'Pending'}]:tab.startsWith('Sent')?[{...base[2],date:'Sent yesterday',status:'Awaiting response'}]:[{...base[0],date:'Completed last week',status:'Completed'}]; return <div className="page-content"><div className="eyebrow">YOUR SKILL JOURNEY</div><h1>Exchange <span className="gradient-text">Offers.</span></h1><p className="muted">Manage the skill exchange requests you've sent and received.</p><div className="tabs">{tabs.map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</div><div className="offer-list">{list.map((o,i)=><article className="exchange-card" key={o.name}><div className="exchange-header"><Avatar initials={o.initials} color={o.color}/><div className="exchange-user"><h3>{o.name}</h3><span>Skill Exchange · {o.date}</span></div><Pill tone={o.status==='Completed'?'done':o.status?'pending':'active'}>{o.status||'Active'}</Pill><button className="icon-btn"><MoreHorizontal/></button></div><div className="exchange-body"><div className="exchange-skill"><span>You Teach</span><strong><Code2 size={18}/> {o.you}</strong></div><div className="swap-symbol"><ArrowLeftRight/></div><div className="exchange-skill"><span>They Teach</span><strong><Sparkles size={18}/> {o.they}</strong></div></div><div className="exchange-actions"><button className="btn blue-btn" onClick={openChat}><MessageCircle size={16}/> Open Chat</button><button className="btn outline-btn" onClick={()=>alert(`${o.name}\nYou teach: ${o.you}\nThey teach: ${o.they}\n${o.date}`)}>View Details</button></div></article>)}</div>{offers.length>0&&<div className="sent-note"><Check size={16}/> Your new offer to {offers[offers.length-1].person.name} has been sent.</div>}</div>; }
+
+function Messages({activeChat,setActiveChat}) { const [search,setSearch]=useState(''); const [message,setMessage]=useState(''); const [allMessages,setAllMessages]=useState({1:[{mine:false,text:"Hey! I saw your profile and I'm excited to learn React together.",time:'10:15 AM'},{mine:true,text:"Hi Anita! I'd love that. I can also share some beginner-friendly resources.",time:'10:18 AM'},{mine:false,text:"Sounds good! Let's schedule our first session this weekend 😊",time:'10:24 AM'}],2:[{mine:false,text:"I've shared the Docker resources. Let me know if you have questions!",time:'Yesterday'}],3:[{mine:false,text:'Can we do the session on Sunday?',time:'Oct 25'}],4:[{mine:false,text:'Thanks for the session!',time:'Oct 22'}]}); const chosen=chats.find(c=>c.id===activeChat); const visible=chats.filter(c=>c.name.toLowerCase().includes(search.toLowerCase())); const send=()=>{if(!message.trim())return;setAllMessages(m=>({...m,[activeChat]:[...(m[activeChat]||[]),{mine:true,text:message.trim(),time:'Now'}]}));setMessage('')}; return <div className="page-content messages-page"><div className="eyebrow">STAY IN THE LOOP</div><h1>Your <span className="gradient-text">Messages.</span></h1><div className="messenger"><aside className="chat-list"><div className="chat-list-head"><h2>Conversations</h2><button className="icon-btn"><Plus/></button></div><div className="chat-search"><Search size={16}/><input placeholder="Search conversations..." value={search} onChange={e=>setSearch(e.target.value)}/></div>{visible.map(c=><button key={c.id} className={`chat-preview ${activeChat===c.id?'selected':''}`} onClick={()=>setActiveChat(c.id)}><Avatar initials={c.initials} color={c.color} online={c.id===1}/><div className="chat-preview-text"><strong>{c.name}</strong><span>{c.preview}</span></div><div className="chat-preview-meta"><small>{c.time}</small>{c.unread&&<i>{c.unread}</i>}</div></button>)}</aside><section className="chat-window">{!chosen?<div className="chat-empty"><div className="empty-bubbles"><MessageCircle/><MessageCircle/></div><h2>Select a conversation</h2><p>Choose a chat from the left to start messaging and coordinate your skill exchange.</p></div>:<><div className="chat-header"><div className="chat-header-user"><Avatar initials={chosen.initials} color={chosen.color} online/><div><strong>{chosen.name}</strong><span><i/> Online</span></div></div><button className="icon-btn"><MoreHorizontal/></button><div className="chat-exchange-strip"><span><ArrowLeftRight size={15}/> Skill Exchange <b>Active</b></span><span>You Teach: <strong>React</strong></span><span>They Teach: <strong>Figma</strong></span><button>Details <ChevronDown size={13}/></button></div></div><div className="chat-messages">{(allMessages[activeChat]||[]).map((m,i)=><div key={i} className={`message-row ${m.mine?'mine':''}`}>{!m.mine&&<Avatar initials={chosen.initials} color={chosen.color} size="xs"/>}<div className="message-content"><div className="message-bubble">{m.text}</div><small>{m.time} {m.mine&&<CheckCheck size={13}/>}</small></div></div>)}</div><div className="chat-compose"><button className="icon-btn"><Paperclip/></button><input value={message} onChange={e=>setMessage(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Type a message..."/><button className="icon-btn"><Smile/></button><button className="send-btn" onClick={send}><Send size={17}/></button></div></>}</section></div></div>; }
+
+function SimplePage({view,setView}) { const data={rooms:['Skill Rooms','Join a focused space to learn together.'],settings:['Settings','Manage your profile, preferences, and notifications.'],invite:['Invite & Earn','Learning is better with friends. Invite someone to SkillSwap.'],faq:['Frequently Asked Questions','Everything you need to get started with skill exchange.']}[view]||['Welcome','Explore SkillSwap.']; return <div className="page-content simple-page"><div className="eyebrow">SKILLSWAP COMMUNITY</div><h1>{data[0]}</h1><p className="muted">{data[1]}</p><div className="simple-card"><div className="benefit-icon pink-icon"><Sparkles/></div><h2>{view==='faq'?'How does SkillSwap work?':view==='invite'?'Invite your learning circle':'Coming together to grow'}</h2><p>{view==='faq'?'Create a profile, list the skills you can teach and want to learn, then send an exchange offer to a compatible partner. Once accepted, coordinate your sessions through messages.':view==='invite'?'Share SkillSwap with friends, classmates, and curious minds. Build your learning circle and exchange knowledge.':'This space is ready for your next idea. Keep exploring and make the most of your learning community.'}</p><button className="btn blue-btn" onClick={()=>setView(view==='faq'?'discover':'discover')}>Explore partners <ArrowRight size={16}/></button></div></div>; }
+
+function Journey({view,setView}) { const steps=[['discover','Discover Partner',Search],['offers','Send Offer',ArrowLeftRight],['offers','Accept Offer',Check],['messages','Chat & Coordinate',MessageCircle],['dashboard','Learn & Review',Star]]; return <div className="journey"><span className="journey-label">YOUR SKILL JOURNEY</span>{steps.map(([id,label,Icon],i)=><React.Fragment key={label}><button className={view===id?'current':''} onClick={()=>setView(id)}><span className="journey-icon"><Icon size={15}/></span>{label}</button>{i<steps.length-1&&<ArrowRight className="journey-arrow" size={14}/>}</React.Fragment>)}</div>; }
+
+export default function App(){const [view,setView]=useState('login');const [teamOpen,setTeamOpen]=useState(false);const [offerPerson,setOfferPerson]=useState(null);const [offers,setOffers]=useState([]);const [activeChat,setActiveChat]=useState(1);const [mobileNav,setMobileNav]=useState(false);const loggedIn=view!=='login';const login=(email)=>{setView('dashboard')};const logout=()=>setView('login');const sendOffer=(data)=>{setOffers(o=>[...o,data]);setOfferPerson(null);setView('offers')};const openChat=()=>{setActiveChat(1);setView('messages')};return <>{!loggedIn?<Login onLogin={login}/>:<div className="app-shell"><Sidebar view={view} setView={setView} logout={logout}/><main className="main-area">{view==='dashboard'?<Dashboard setView={setView} onTeam={()=>setTeamOpen(true)}/>:view==='discover'?<Discover onOffer={setOfferPerson}/>:view==='offers'?<Offers openChat={openChat} offers={offers}/>:view==='messages'?<Messages activeChat={activeChat} setActiveChat={setActiveChat}/>:<SimplePage view={view} setView={setView}/>}<Journey view={view} setView={setView}/></main></div>}{teamOpen&&<TeamModal onClose={()=>setTeamOpen(false)}/ >}{offerPerson&&<OfferModal person={offerPerson} onClose={()=>setOfferPerson(null)} onSend={sendOffer}/>}</>;}
