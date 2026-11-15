@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { font-family: 'Space Grotesk', sans-serif; color: #050505; background: #fff; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+.mono { font-family: 'DM Mono', monospace; }
+.hard { box-shadow: 4px 4px 0 #000; }
+.hard-sm { box-shadow: 3px 3px 0 #000; }
+.hard-blue { box-shadow: 4px 4px 0 #1d4ed8; }
+.press { transition: transform .12s, box-shadow .12s; }
+.press:active { transform: translate(2px,2px); box-shadow: none; }
+.field { width: 100%; border: 2px solid #000; background: #fff; padding: 12px 14px; outline: none; }
+.field:focus { background: #eff6ff; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #2563eb; border: 1px solid #000; }

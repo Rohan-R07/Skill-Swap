@@ -1,8 +1,11 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.AuthResponse;
+import com.example.backend.dto.ExchangeOfferResponse;
 import com.example.backend.service.EmailAlreadyExistsException;
 import com.example.backend.service.InvalidCredentialsException;
+import com.example.backend.service.OfferAccessDeniedException;
+import com.example.backend.service.OfferAlreadyProcessedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,6 +28,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<AuthResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
         AuthResponse response = new AuthResponse(false, ex.getMessage(), null, null, null, null);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    @ExceptionHandler(OfferAlreadyProcessedException.class)
+    public ResponseEntity<ExchangeOfferResponse> handleOfferAlreadyProcessed(OfferAlreadyProcessedException ex) {
+        ExchangeOfferResponse response = new ExchangeOfferResponse();
+        response.setSuccess(false);
+        response.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(OfferAccessDeniedException.class)
+    public ResponseEntity<ExchangeOfferResponse> handleOfferAccessDenied(OfferAccessDeniedException ex) {
+        ExchangeOfferResponse response = new ExchangeOfferResponse();
+        response.setSuccess(false);
+        response.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ExchangeOfferResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        ExchangeOfferResponse response = new ExchangeOfferResponse();
+        response.setSuccess(false);
+        response.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
