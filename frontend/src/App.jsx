@@ -1,18 +1,11 @@
 import React, { useMemo, useState } from 'react'
 import {
-  ArrowLeftRight, Menu, X, Home, MessageCircle, Users, Settings, Gift, CircleHelp,
+  ArrowLeftRight, Menu, X, Home, MessageCircle, Users, Settings, CircleHelp,
   LogOut, Search, SlidersHorizontal, Star, Send, Paperclip, Smile, Music2, Code2,
   Laptop, Palette, Check, Clock3, ChevronRight, UserRound, Bell, Plus, Zap, Heart,
   CalendarDays, BookOpen, ArrowUpRight, ShieldCheck, Mail, Lock, Sparkles
 } from 'lucide-react'
 
-const team = [
-  ['SB','Sahana B','Lead UI/UX Designer'],
-  ['RP','Rithesh L Prabhu','Full Stack Lead'],
-  ['RR','Rohan R','Frontend Engineer'],
-  ['SS','Sachi Singh','Product Manager & QA'],
-  ['RR','Rithika R','Backend & Database Engineer'],
-]
 const people = [
   { name:'Anita Desai', role:'Design Student', rating:'4.9', match:98, teaches:['Figma','Illustrator'], learns:['React','CSS'], initials:'AD', color:'bg-blue-200', about:'I love turning ideas into clear, useful interfaces. Happy to teach design fundamentals and Figma workflows.' },
   { name:'Karthik Raj', role:'Frontend Developer', rating:'4.8', match:95, teaches:['React','JavaScript'], learns:['UI Design','Figma'], initials:'KR', color:'bg-yellow-200', about:'Building accessible web experiences and learning visual design along the way.' },
@@ -36,14 +29,6 @@ const Avatar = ({initials, color='bg-blue-200', size='h-12 w-12'}) => <div class
 function Logo({small=false}) {
   return <div className="flex items-center gap-2"><span className="flex h-10 w-10 items-center justify-center border-2 border-black bg-blue-600 text-white"><ArrowLeftRight size={22}/></span><span className={`font-display font-black tracking-tight ${small?'text-xl':'text-2xl'}`}>SkillSwap</span></div>
 }
-function TeamModal({close}) {
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={close}>
-    <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto border-[3px] border-black bg-white p-5 shadow-[8px_8px_0_#2563eb]" onClick={e=>e.stopPropagation()}>
-      <div className="mb-6 flex items-start justify-between gap-4"><div><p className="mono text-xs font-bold uppercase tracking-widest text-blue-700">The people behind the platform</p><h2 className="text-3xl font-black tracking-tight sm:text-4xl">Meet our team<span className="text-blue-600">.</span></h2></div><button onClick={close} className="border-2 border-black p-2 hover:bg-blue-50" aria-label="Close team modal"><X/></button></div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{team.map(([initials,name,role],i)=><div key={name} className="border-2 border-black bg-white p-4 shadow-[4px_4px_0_#000]"><div className="mb-4 flex h-16 w-16 items-center justify-center border-2 border-black bg-blue-600 text-xl font-black text-white">{initials}</div><h3 className="text-lg font-black">{name}</h3><p className="mono mt-2 inline-block border-2 border-black bg-blue-100 px-2 py-1 text-[10px] font-bold uppercase">{role}</p></div>)}</div>
-    </div>
-  </div>
-}
 function Login({onLogin,onSignup}) {
   const [email,setEmail]=useState(''), [password,setPassword]=useState('')
   return <div className="flex min-h-screen items-center justify-center bg-blue-50 px-4 py-12">
@@ -62,11 +47,10 @@ function Login({onLogin,onSignup}) {
   </div>
 }
 function Sidebar({view,setView,logout}) {
-  const nav=[['Dashboard',Home,'dashboard'],['Messages',MessageCircle,'chat'],['Skill Rooms',Users,'rooms'],['Settings',Settings,'settings'],['Invite and Earn',Gift,'invite'],['FAQ',CircleHelp,'faq']]
+  const nav=[['Dashboard',Home,'dashboard'],['Messages',MessageCircle,'chat'],['Skill Rooms',Users,'rooms'],['Settings',Settings,'settings'],['FAQ',CircleHelp,'faq']]
   return <aside className="h-fit border-2 border-black bg-white p-3 shadow-[4px_4px_0_#000]">
     <div className="mb-4 flex items-center gap-2 px-2 py-3"><Logo small/></div>
-    <nav className="space-y-1">{nav.map(([label,Icon,id])=><button key={id} onClick={()=>setView(id==='rooms'?'discover':id==='invite'?'offers':id==='faq'?'dashboard':id)} className={`flex w-full items-center gap-3 border-2 px-3 py-3 text-left text-sm font-bold ${view===id?'border-black bg-blue-600 text-white shadow-[2px_2px_0_#000]':'border-transparent hover:border-black hover:bg-blue-50'}`}><Icon size={18}/>{label}</button>)}</nav>
-    <div className="mt-5 border-2 border-black bg-blue-50 p-4"><p className="mono text-[10px] font-bold uppercase tracking-wider">Total Referrals</p><p className="mt-1 text-3xl font-black">1,245</p><p className="mt-1 text-xs text-gray-600">You’re growing the community!</p></div>
+    <nav className="space-y-1">{nav.map(([label,Icon,id])=><button key={id} onClick={()=>setView(id==='rooms'?'discover':id==='faq'?'dashboard':id)} className={`flex w-full items-center gap-3 border-2 px-3 py-3 text-left text-sm font-bold ${view===id?'border-black bg-blue-600 text-white shadow-[2px_2px_0_#000]':'border-transparent hover:border-black hover:bg-blue-50'}`}><Icon size={18}/>{label}</button>)}</nav>
     <button onClick={logout} className="mt-3 flex w-full items-center gap-3 border-2 border-transparent px-3 py-3 text-sm font-black uppercase hover:border-black hover:bg-blue-50"><LogOut size={18}/> Logout</button>
   </aside>
 }
@@ -131,25 +115,37 @@ function Chat({}) {
   </div>
 }
 function Journey({view,setView}) {
-  const steps=[['Discover Partner','discover',Search],['Send Offer','offers',ArrowLeftRight],['Accept Offer','offers',Check],['Chat & Coordinate','chat',MessageCircle],['Learn & Review','dashboard',Star]]
-  return <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-black bg-white px-2 py-2"><div className="mx-auto flex max-w-7xl items-center justify-between gap-1 overflow-x-auto">{steps.map(([label,id,Icon],i)=><React.Fragment key={label}><button onClick={()=>setView(id)} className={`flex shrink-0 items-center gap-2 px-2 py-2 text-left text-[10px] font-black sm:px-3 sm:text-xs ${view===id?'bg-blue-100':''}`}><span className={`flex h-7 w-7 items-center justify-center border-2 border-black ${view===id?'bg-blue-600 text-white':'bg-white'}`}><Icon size={14}/></span><span className="hidden sm:inline">{label}</span></button>{i<4&&<ChevronRight size={14} className="shrink-0 text-blue-700"/>}</React.Fragment>)}</div></div>
+  const steps=[['Discover Partner','discover',Search],['Manage Exchanges','offers',ArrowLeftRight]]
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-black bg-white px-2 py-2">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-0 overflow-x-auto">
+        {steps.map(([label,id,Icon])=>(<React.Fragment key={label}>
+          <button onClick={()=>setView(id)} className={`flex flex-1 items-center gap-2 px-3 py-2.5 text-center text-[10px] font-black transition-all duration-200 ${view===id?'bg-blue-100 shadow-[2px_2px_0_#000]':'shadow-[1px_1px_0_#000] hover:shadow-[2px_2px_0_#000] hover:-translate-y-1'}`}>
+            <span className={`flex h-8 w-8 items-center justify-center border-2 border-black rounded-full transition-colors duration-200 ${view===id?'bg-blue-600 text-white':'bg-white text-black hover:bg-blue-50'}`}>
+              <Icon size={15}/>
+            </span>
+            <span className={view===id?'text-blue-600':'text-black'}>{label}</span>
+          </button>
+          {label==='Discover Partner'&&<div className="hidden sm:block w-px h-5 bg-black mx-2 self-center"/>}
+        </React.Fragment>))}
+      </div>
+    </div>
+  )
 }
 function App() {
-  const [view,setView]=useState('login'),[showTeam,setShowTeam]=useState(false),[mobileNav,setMobileNav]=useState(false),[toast,setToast]=useState('')
+  const [view,setView]=useState('login'),[mobileNav,setMobileNav]=useState(false),[toast,setToast]=useState('')
   const login=()=>{setView('dashboard');setToast('Welcome to SkillSwap!');setTimeout(()=>setToast(''),2500)}
   const signup=()=>{setToast('Sign-up flow is ready to connect to your backend.');setTimeout(()=>setToast(''),3000)}
   if(view==='login')return <Login onLogin={login} onSignup={signup}/>
-  const titles={dashboard:'Dashboard',discover:'Discover',offers:'Offers',chat:'Messages',rooms:'Skill Rooms',settings:'Settings',invite:'Invite and Earn',faq:'FAQ'}
+  const titles={dashboard:'Dashboard',discover:'Discover',offers:'Offers',chat:'Messages',rooms:'Skill Rooms',settings:'Settings',faq:'FAQ'}
   return <div className="min-h-screen bg-blue-50 pb-20">
-    <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button><button onClick={()=>setShowTeam(true)} className="text-sm font-bold hover:text-blue-700">Our Team</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button><Button primary onClick={()=>setView('discover')} className="px-3 py-2 text-xs">Join Waitlist</Button></div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
-      {mobileNav&&<div className="grid grid-cols-2 gap-2 border-t-2 border-black bg-white p-3 lg:hidden">{['Benefits','How it works','About Us','Our Team','Sign up','Login','Join Waitlist'].map(x=><button key={x} onClick={()=>{setMobileNav(false);if(x==='Our Team')setShowTeam(true);else if(x==='Login')setView('login');else if(x==='Join Waitlist')setView('discover');else if(x==='Sign up')signup();else document.getElementById(x==='Benefits'?'benefits':x==='How it works'?'how':'about')?.scrollIntoView({behavior:'smooth'})}} className="border-2 border-black p-2 text-sm font-bold">{x}</button>)}</div>}
+    <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button><Button primary onClick={()=>setView('discover')} className="px-3 py-2 text-xs">Join Waitlist</Button></div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
+      {mobileNav&&<div className="grid grid-cols-2 gap-2 border-t-2 border-black bg-white p-3 lg:hidden">{['Benefits','How it works','About Us','Sign up','Login','Join Waitlist'].map(x=><button key={x} onClick={()=>{setMobileNav(false);if(x==='Login')setView('login');else if(x==='Join Waitlist')setView('discover');else if(x==='Sign up')signup();else document.getElementById(x==='Benefits'?'benefits':x==='How it works'?'how':'about')?.scrollIntoView({behavior:'smooth'})}} className="border-2 border-black p-2 text-sm font-bold">{x}</button>)}</div>}
     </header>
     <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView}/>:view==='offers'?<Offers setView={setView}/>:view==='chat'?<Chat/>:<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
-      <div className="mt-10 grid gap-4 border-t-2 border-black pt-6 md:grid-cols-3" id="benefits"><div><Tag blue>WHY SKILLSWAP</Tag><h2 className="mt-2 text-xl font-black">Your skills have value.</h2><p className="mt-1 text-sm text-gray-600">Trade knowledge, grow confidence, and meet curious people.</p></div><div id="how"><Tag>HOW IT WORKS</Tag><h2 className="mt-2 text-xl font-black">Find. Exchange. Grow.</h2><p className="mt-1 text-sm text-gray-600">Discover a partner, agree on a skill swap, then learn together.</p></div><div id="about"><Tag>ABOUT US</Tag><h2 className="mt-2 text-xl font-black">Learning is better shared.</h2><p className="mt-1 text-sm text-gray-600">SkillSwap makes peer-to-peer learning accessible to everyone.</p><button onClick={()=>setShowTeam(true)} className="mono mt-3 text-xs font-bold underline">MEET THE TEAM ↗</button></div></div>
+      <div className="mt-10 grid gap-4 border-t-2 border-black pt-6 md:grid-cols-3" id="benefits"><div><Tag blue>WHY SKILLSWAP</Tag><h2 className="mt-2 text-xl font-black">Your skills have value.</h2><p className="mt-1 text-sm text-gray-600">Trade knowledge, grow confidence, and meet curious people.</p></div><div id="how"><Tag>HOW IT WORKS</Tag><h2 className="mt-2 text-xl font-black">Find. Exchange. Grow.</h2><p className="mt-1 text-sm text-gray-600">Discover a partner, agree on a skill swap, then learn together.</p></div><div id="about"><Tag>ABOUT US</Tag><h2 className="mt-2 text-xl font-black">Learning is better shared.</h2><p className="mt-1 text-sm text-gray-600">SkillSwap makes peer-to-peer learning accessible to everyone.</p></div></div>
     </main></div>
-    <div className="fixed bottom-16 right-4 z-20 lg:bottom-20"><button onClick={()=>setShowTeam(true)} className="border-2 border-black bg-blue-600 px-4 py-3 text-xs font-black uppercase text-white shadow-[3px_3px_0_#000]">Our Team</button></div>
     <Journey view={view} setView={setView}/>
-    {showTeam&&<TeamModal close={()=>setShowTeam(false)}/>}
     {toast&&<div role="status" className="fixed right-4 top-20 z-50 border-2 border-black bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-[4px_4px_0_#000]">{toast}</div>}
   </div>
 }
