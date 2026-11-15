@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import {
   ArrowLeftRight, Menu, X, Home, MessageCircle, Users, Settings, CircleHelp,
   LogOut, Search, SlidersHorizontal, Star, Send, Paperclip, Smile, Music2, Code2,
@@ -30,21 +30,68 @@ function Logo({small=false}) {
   return <div className="flex items-center gap-2"><span className="flex h-10 w-10 items-center justify-center border-2 border-black bg-blue-600 text-white"><ArrowLeftRight size={22}/></span><span className={`font-display font-black tracking-tight ${small?'text-xl':'text-2xl'}`}>SkillSwap</span></div>
 }
 function Login({onLogin,onSignup}) {
-  const [email,setEmail]=useState(''), [password,setPassword]=useState('')
-  return <div className="flex min-h-screen items-center justify-center bg-blue-50 px-4 py-12">
-    <div className="w-full max-w-md border-2 border-black bg-white p-7 shadow-[6px_6px_0_#000] sm:p-9">
-      <div className="mb-8 flex flex-col items-center text-center"><Logo/><p className="mono mt-3 text-[10px] font-bold tracking-[.2em]">NEVER STOP LEARNING.</p></div>
-      <h1 className="mb-1 text-3xl font-black tracking-tight">Welcome back.</h1><p className="mb-6 text-sm text-gray-600">Log in and pick up where your learning left off.</p>
-      <form onSubmit={e=>{e.preventDefault();onLogin()}} className="space-y-4">
-        <label className="block text-sm font-bold">Email address<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" className="field mt-2"/></label>
-        <label className="block text-sm font-bold">Password<input required minLength="4" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Enter your password" className="field mt-2"/></label>
-        <Button primary className="w-full py-3">Login <ArrowUpRight size={16}/></Button>
-      </form>
-      <div className="my-5 flex items-center gap-3"><div className="h-[2px] flex-1 bg-black"/><span className="mono text-[10px] font-bold">NEW HERE?</span><div className="h-[2px] flex-1 bg-black"/></div>
-      <Button onClick={onSignup} className="w-full py-3">Sign Up</Button>
-      <p className="mono mt-6 text-center text-[10px] text-gray-500">A COMMUNITY BUILT ON SHARED KNOWLEDGE.</p>
+  const [email,setEmail]=useState('')
+  const [password,setPassword]=useState('')
+  const [name,setName]=useState('')
+  const [bio,setBio]=useState('')
+  const [mode,setMode]=useState('login')
+  const [loading,setLoading]=useState(false)
+  const [error,setError]=useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+    try {
+      const url = mode === 'register'
+        ? 'http://localhost:8080/api/auth/register'
+        : 'http://localhost:8080/api/auth/login'
+      const body = mode === 'register'
+        ? {name, email, password, bio}
+        : {email, password}
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || (mode === 'register' ? 'Registration failed' : 'Login failed'))
+      onLogin(data.name, data.email, data.id || null, data.bio || '')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-blue-50 px-4 py-12">
+      <div className="w-full max-w-md border-2 border-black bg-white p-7 shadow-[6px_6px_0_#000] sm:p-9">
+        <div className="mb-8 flex flex-col items-center text-center"><Logo/><p className="mono mt-3 text-[10px] font-bold tracking-[.2em]">NEVER STOP LEARNING.</p></div>
+        <h1 className="mb-1 text-3xl font-black tracking-tight">{mode === 'login' ? 'Welcome back.' : 'Create Account'}</h1>
+        <p className="mb-6 text-sm text-gray-600">{mode === 'login' ? 'Log in and pick up where your learning left off.' : 'Join the SkillSwap community.'}</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'register' && (
+            <>
+              <label className="block text-sm font-bold">Full Name<input required type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="Rohan" className="field mt-2"/></label>
+              <label className="block text-sm font-bold">Bio<input type="text" value={bio} onChange={e=>setBio(e.target.value)} placeholder="Tell us about yourself" className="field mt-2"/></label>
+            </>
+          )}
+          <label className="block text-sm font-bold">Email address<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" className="field mt-2"/></label>
+          <label className="block text-sm font-bold">Password<input required minLength={mode === 'register' ? 6 : 4} type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder={mode === 'register' ? 'Create a password' : 'Enter your password'} className="field mt-2"/></label>
+          {error && <p className="text-[10px] text-red-600 font-bold">{error}</p>}
+          <Button primary className="w-full py-3" disabled={loading}>
+            {loading ? 'Processing...' : (mode === 'login' ? 'Login <ArrowUpRight size={16}/>' : 'Create Account')}
+          </Button>
+        </form>
+        <div className="my-5 flex items-center gap-3"><div className="h-[2px] flex-1 bg-black"/><span className="mono text-[10px] font-bold">{mode === 'login' ? 'NEW HERE?' : 'ALREADY HAVE AN ACCOUNT?'}</span><div className="h-[2px] flex-1 bg-black"/></div>
+        <Button onClick={()=>setMode(mode === 'login' ? 'register' : 'login')} className="w-full py-3">
+          {mode === 'login' ? 'Sign Up' : 'Sign In'}
+        </Button>
+        <p className="mono mt-6 text-center text-[10px] text-gray-500">A COMMUNITY BUILT ON SHARED KNOWLEDGE.</p>
+      </div>
     </div>
-  </div>
+  )
 }
 function Sidebar({view,setView,logout}) {
   const nav=[['Dashboard',Home,'dashboard'],['Messages',MessageCircle,'chat'],['Skill Rooms',Users,'rooms'],['Settings',Settings,'settings'],['FAQ',CircleHelp,'faq']]
@@ -118,15 +165,17 @@ function Journey({view,setView}) {
   const steps=[['Discover Partner','discover',Search],['Manage Exchanges','offers',ArrowLeftRight]]
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 border-t-2 border-black bg-white px-2 py-2">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-0 overflow-x-auto">
+      <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto">
         {steps.map(([label,id,Icon])=>(<React.Fragment key={label}>
-          <button onClick={()=>setView(id)} className={`flex flex-1 items-center gap-2 px-3 py-2.5 text-center text-[10px] font-black transition-all duration-200 ${view===id?'bg-blue-100 shadow-[2px_2px_0_#000]':'shadow-[1px_1px_0_#000] hover:shadow-[2px_2px_0_#000] hover:-translate-y-1'}`}>
-            <span className={`flex h-8 w-8 items-center justify-center border-2 border-black rounded-full transition-colors duration-200 ${view===id?'bg-blue-600 text-white':'bg-white text-black hover:bg-blue-50'}`}>
+          <button
+            onClick={()=>setView(id)}
+            className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 text-center text-sm font-black border-2 border-black transition-all duration-150 ${view===id?'bg-blue-600 text-white shadow-[2px_2px_0_#000] hover:bg-blue-700 hover:-translate-y-[2px] hover:shadow-[4px_4px_0_#000] active:-translate-y-[1px] active:shadow-[1px_1px_0_#000]':'bg-white text-black shadow-[1px_1px_0_#000] hover:bg-blue-50 hover:-translate-y-[2px] hover:shadow-[4px_4px_0_#000] active:-translate-y-[1px] active:bg-blue-600 active:text-white active:shadow-[1px_1px_0_#000]'}`}
+          >
+            <span className={`flex h-8 w-8 items-center justify-center border-2 border-black rounded-md transition-colors duration-150 bg-white`}>
               <Icon size={15}/>
             </span>
-            <span className={view===id?'text-blue-600':'text-black'}>{label}</span>
+            <span className={view===id?'text-white':'text-black'}>{label}</span>
           </button>
-          {label==='Discover Partner'&&<div className="hidden sm:block w-px h-5 bg-black mx-2 self-center"/>}
         </React.Fragment>))}
       </div>
     </div>
@@ -134,12 +183,50 @@ function Journey({view,setView}) {
 }
 function App() {
   const [view,setView]=useState('login'),[mobileNav,setMobileNav]=useState(false),[toast,setToast]=useState('')
-  const login=()=>{setView('dashboard');setToast('Welcome to SkillSwap!');setTimeout(()=>setToast(''),2500)}
+  const [userName,setUserName]=useState('')
+  const [userEmail,setUserEmail]=useState('')
+  const [showAvatarMenu,setShowAvatarMenu]=useState(false)
+
+  useEffect(()=>{
+    try {
+      const stored=localStorage.getItem('skillswap_user')
+      if(stored) {
+        const parsed=JSON.parse(stored)
+        if(parsed && parsed.name && parsed.email) {
+          setUserName(parsed.name)
+          setUserEmail(parsed.email)
+          setView('dashboard')
+        }
+      }
+    } catch (e) {
+      localStorage.removeItem('skillswap_user')
+    }
+  },[])
+
+  const login=(name='',email='',id=null,bio='')=>{
+    localStorage.setItem('skillswap_user',JSON.stringify({id,name,email,bio}))
+    setView('dashboard')
+    setUserName(name)
+    setUserEmail(email)
+    setToast('Welcome to SkillSwap!')
+    setTimeout(()=>setToast(''),2500)
+  }
   const signup=()=>{setToast('Sign-up flow is ready to connect to your backend.');setTimeout(()=>setToast(''),3000)}
+  const logout=()=>{
+    localStorage.removeItem('skillswap_user')
+    setView('login')
+    setUserName('')
+    setUserEmail('')
+    setShowAvatarMenu(false)
+    setToast('Logged out')
+    setTimeout(()=>setToast(''),2000)
+  }
+  const userInitial=userName?userName.charAt(0).toUpperCase():'?'
+  useEffect(()=>{const handleClickOutside=(e)=>{if(showAvatarMenu&&!e.target.closest('.avatar-dropdown'))setShowAvatarMenu(false)};document.addEventListener('mousedown',handleClickOutside);return ()=>document.removeEventListener('mousedown',handleClickOutside)},[showAvatarMenu])
   if(view==='login')return <Login onLogin={login} onSignup={signup}/>
   const titles={dashboard:'Dashboard',discover:'Discover',offers:'Offers',chat:'Messages',rooms:'Skill Rooms',settings:'Settings',faq:'FAQ'}
   return <div className="min-h-screen bg-blue-50 pb-20">
-    <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button><Button primary onClick={()=>setView('discover')} className="px-3 py-2 text-xs">Join Waitlist</Button></div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
+    <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={()=>setView('discover')} className="px-3 py-2 text-xs font-extrabold uppercase">Join Waitlist</button>{userName?(<div className="relative"><button onClick={()=>setShowAvatarMenu(!showAvatarMenu)} className="avatar-dropdown flex h-8 w-8 items-center justify-center border-2 border-black rounded-full bg-blue-600 text-white font-black text-sm uppercase hover:bg-blue-700 transition-colors duration-200 active:scale-95">{userInitial}</button>{showAvatarMenu&&<div className="avatar-dropdown absolute right-0 mt-2 w-48 border-2 border-black bg-white shadow-[4px_4px_0_#000] z-50"><div className="px-3 py-2 border-b-2 border-black bg-blue-50"><p className="mono text-[10px] font-bold uppercase text-black">{userName}</p>{userEmail&&<p className="mono text-[10px] font-bold uppercase text-gray-600">{userEmail}</p>}</div><button onClick={logout} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><LogOut size={14}/> Logout</button></div>}</div>):(<><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button></>)}</div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
       {mobileNav&&<div className="grid grid-cols-2 gap-2 border-t-2 border-black bg-white p-3 lg:hidden">{['Benefits','How it works','About Us','Sign up','Login','Join Waitlist'].map(x=><button key={x} onClick={()=>{setMobileNav(false);if(x==='Login')setView('login');else if(x==='Join Waitlist')setView('discover');else if(x==='Sign up')signup();else document.getElementById(x==='Benefits'?'benefits':x==='How it works'?'how':'about')?.scrollIntoView({behavior:'smooth'})}} className="border-2 border-black p-2 text-sm font-bold">{x}</button>)}</div>}
     </header>
     <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView}/>:view==='offers'?<Offers setView={setView}/>:view==='chat'?<Chat/>:<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
