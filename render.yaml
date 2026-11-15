@@ -3,7 +3,7 @@ services:
   # Spring Boot Backend
   - type: web
     name: skillswap-backend
-    env: docker
+    runtime: docker
     plan: free
     rootDir: backend
     dockerfilePath: ./Dockerfile
