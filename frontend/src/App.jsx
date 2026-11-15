@@ -1,17 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   ArrowLeftRight, Menu, X, Home, MessageCircle, Users, Settings, CircleHelp,
-  LogOut, Search, SlidersHorizontal, Star, Send, Paperclip, Smile, Music2, Code2,
+  LogOut, Search, Send, Paperclip, Smile, Music2, Code2,
   Laptop, Palette, Check, Clock3, ChevronRight, UserRound, Bell, Plus, Zap, Heart,
   CalendarDays, BookOpen, ArrowUpRight, ShieldCheck, Mail, Lock, Sparkles
 } from 'lucide-react'
 
-const people = [
-  { name:'Anita Desai', role:'Design Student', rating:'4.9', match:98, teaches:['Figma','Illustrator'], learns:['React','CSS'], initials:'AD', color:'bg-blue-200', about:'I love turning ideas into clear, useful interfaces. Happy to teach design fundamentals and Figma workflows.' },
-  { name:'Karthik Raj', role:'Frontend Developer', rating:'4.8', match:95, teaches:['React','JavaScript'], learns:['UI Design','Figma'], initials:'KR', color:'bg-yellow-200', about:'Building accessible web experiences and learning visual design along the way.' },
-  { name:'Meera Nair', role:'Visual Artist', rating:'5.0', match:93, teaches:['Illustration','Procreate'], learns:['Python','Data Science'], initials:'MN', color:'bg-pink-200', about:'Digital illustrator looking to explore creative coding and data storytelling.' },
-  { name:'Arjun Rao', role:'Developer', rating:'4.7', match:91, teaches:['Python','SQL'], learns:['Guitar','Photography'], initials:'AR', color:'bg-green-200', about:'I can help you get started with Python and databases. Looking for a creative hobby.' },
-]
 const chats = [
   { name:'Anita Desai', initials:'AD', skill:'React ⇄ Figma', online:true, messages:[['them','Hey! Great to connect. What would you like to start with?'],['you','Hi Anita! I would love to learn Figma basics. I can help you with React.'],['them','Perfect! Let’s plan a first session this week.']] },
   { name:'Karthik Raj', initials:'KR', skill:'UI Design ⇄ React', online:true, messages:[['them','I checked out your profile. Your skill goals look great!'],['you','Thanks! Excited to exchange knowledge.']] },
@@ -117,24 +111,88 @@ function Hero({setView}) {
 function Dashboard({setView}) {
   return <div className="space-y-7"><Hero setView={setView}/>
     <div className="grid gap-4 sm:grid-cols-3">{[['Discover','Find your next skill partner.',Search,'discover'],['Your exchanges','Keep learning together.',ArrowLeftRight,'offers'],['Messages','Make plans and share ideas.',MessageCircle,'chat']].map(([title,desc,Icon,id])=><button key={id} onClick={()=>setView(id)} className="press border-2 border-black bg-blue-50 p-5 text-left shadow-[4px_4px_0_#000]"><Icon className="mb-5 text-blue-700" size={25}/><h3 className="text-xl font-black">{title}</h3><p className="mt-1 text-sm text-gray-600">{desc}</p><p className="mono mt-4 text-[10px] font-bold uppercase">Explore <span className="text-blue-700">↗</span></p></button>)}</div>
-    <section><div className="mb-4 flex items-end justify-between"><div><p className="mono text-xs font-bold uppercase text-blue-700">Made for your goals</p><h2 className="text-2xl font-black">Recommended for you</h2></div><button onClick={()=>setView('discover')} className="mono text-xs font-bold underline">VIEW ALL</button></div><div className="grid gap-4 md:grid-cols-2">{people.slice(0,2).map(p=><PersonCard key={p.name} p={p} onOffer={()=>setView('offers')} onProfile={()=>setView('discover')}/>)}</div></section>
+    <section><div className="mb-4 flex items-end justify-between"><div><p className="mono text-xs font-bold uppercase text-blue-700">Made for your goals</p><h2 className="text-2xl font-black">Recommended for you</h2></div><button onClick={()=>setView('discover')} className="mono text-xs font-bold underline">VIEW ALL</button></div><div className="grid gap-4 md:grid-cols-2"></div></section>
   </div>
 }
-function PersonCard({p,onOffer,onProfile}) {
+function PersonCard({user,onOffer,onProfile,userId}) {
+  const initials = user.name.split(' ').map(n => n[0]).filter(Boolean).join('').toUpperCase()
+  const teachNames = (user.teachSkills || []).map(s => s.name)
+  const learnNames = (user.learnSkills || []).map(s => s.name)
+  const isSelf = String(user.id) === String(userId)
   return <article className="border-2 border-black bg-white p-5 shadow-[4px_4px_0_#000]">
-    <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex items-center gap-3"><Avatar initials={p.initials} color={p.color}/><div><h3 className="font-black">{p.name}</h3><p className="text-xs text-gray-600">{p.role} · <Star size={12} className="inline fill-yellow-400 text-black"/> {p.rating}</p></div></div><span className="mono border-2 border-black bg-blue-600 px-2 py-1 text-xs font-bold text-white">{p.match}% MATCH</span></div>
-    <p className="mt-4 text-sm leading-6 text-gray-700">{p.about}</p><div className="mt-4 space-y-2"><div className="flex flex-wrap items-center gap-2"><Tag blue>Can teach: {p.teaches.join(', ')}</Tag></div><div className="flex flex-wrap items-center gap-2"><Tag>Wants to learn: {p.learns.join(', ')}</Tag></div></div>
-    <div className="mt-5 flex flex-wrap gap-2"><Button onClick={onProfile}>View Profile</Button><Button primary onClick={onOffer}><ArrowLeftRight size={15}/> Send Exchange Offer</Button></div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex items-center gap-3"><Avatar initials={initials} /><div><h3 className="font-black">{user.name}</h3>{user.bio && <p className="text-xs text-gray-600">{user.bio}</p>}</div></div></div>
+    <div className="mt-4 space-y-2">
+      {teachNames.length > 0 && <div className="flex flex-wrap items-center gap-2"><Tag blue>Can teach: {teachNames.join(', ')}</Tag></div>}
+      {learnNames.length > 0 && <div className="flex flex-wrap items-center gap-2"><Tag>Wants to learn: {learnNames.join(', ')}</Tag></div>}
+    </div>
+    <div className="mt-5 flex flex-wrap gap-2"><Button onClick={()=>onProfile(user)}>View Profile</Button><Button primary onClick={isSelf?undefined:()=>onOffer(user.id)} disabled={isSelf} className={isSelf?'border-2 border-black bg-gray-200 text-gray-500 cursor-not-allowed hover:bg-gray-200 active:bg-gray-200':''} title={isSelf?'You cannot send an offer to yourself.':undefined}>Send Exchange Offer</Button></div>
   </article>
 }
-function Discover({setView}) {
-  const [query,setQuery]=useState(''),[filter,setFilter]=useState(false)
-  const [onlyHigh,setOnlyHigh]=useState(false)
-  const filtered=useMemo(()=>people.filter(p=>(p.name+' '+p.teaches.join(' ')+' '+p.learns.join(' ')).toLowerCase().includes(query.toLowerCase())&&(!onlyHigh||p.match>=95)),[query,onlyHigh])
+function Discover({setView,userId}) {
+  const [query,setQuery]=useState('')
+  const [users,setUsers]=useState([])
+  const [loading,setLoading]=useState(false)
+  const [error,setError]=useState('')
+  const requestSeq=useRef(0)
+  const [debounceTimer,setDebounceTimer]=useState(null)
+
+  const fetchUsers=async(name='')=>{
+    const mySeq = ++requestSeq.current
+    setLoading(true)
+    setError('')
+    try{
+      const url = name ? `http://localhost:8080/api/users/discover?name=${encodeURIComponent(name)}` : 'http://localhost:8080/api/users/discover'
+      const res=await fetch(url)
+      if(!res.ok) throw new Error('Failed to load users')
+      const data=await res.json()
+      if(mySeq !== requestSeq.current) return
+      setUsers(data)
+    }catch(err){
+      if(mySeq !== requestSeq.current) return
+      setError(err.message)
+      setUsers([])
+    }finally{
+      if(mySeq !== requestSeq.current) return
+      setLoading(false)
+    }
+  }
+
+  useEffect(()=>{
+    fetchUsers()
+  },[])
+
+  useEffect(()=>{
+    return ()=>{ if(debounceTimer) clearTimeout(debounceTimer) }
+  },[])
+
+  const handleSearch=(e)=>{
+    const val=e.target.value.trim()
+    setQuery(val)
+    if(debounceTimer) clearTimeout(debounceTimer)
+    const id=setTimeout(()=>{
+      fetchUsers(val)
+    },300)
+    setDebounceTimer(id)
+  }
+
   return <div><div className="mb-6"><p className="mono text-xs font-bold uppercase text-blue-700">Find your people</p><h1 className="text-4xl font-black tracking-tight">Discover partners<span className="text-blue-600">.</span></h1><p className="mt-2 text-gray-600">Find someone whose skills complement yours.</p></div>
-    <div className="mb-6 flex flex-col gap-3 border-2 border-black bg-blue-50 p-3 sm:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-3 text-gray-500" size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="I want to learn..." className="field pl-10"/></div><Button onClick={()=>setFilter(!filter)}><SlidersHorizontal size={16}/> Filters</Button></div>
-    {filter&&<div className="mb-5 flex flex-wrap items-center gap-3 border-2 border-black bg-white p-4"><label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={onlyHigh} onChange={e=>setOnlyHigh(e.target.checked)} className="h-4 w-4 accent-blue-600"/> 95%+ match only</label><button onClick={()=>{setOnlyHigh(false);setQuery('')}} className="mono text-xs font-bold underline">CLEAR FILTERS</button></div>}
-    <div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-black">Top recommended matches</h2><Tag blue>{filtered.length} PARTNERS</Tag></div><div className="grid gap-4 xl:grid-cols-2">{filtered.map(p=><PersonCard key={p.name} p={p} onOffer={()=>setView('offers')} onProfile={()=>alert(`${p.name}\n${p.about}`)}/>)}</div>{!filtered.length&&<div className="border-2 border-dashed border-black bg-blue-50 p-10 text-center"><Search className="mx-auto mb-3"/><h3 className="font-black">No matches found</h3><p className="text-sm text-gray-600">Try another skill or clear your filters.</p></div>}
+    <div className="mb-6 flex flex-col gap-3 border-2 border-black bg-blue-50 p-3 sm:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-3 text-gray-500" size={18}/><input value={query} onChange={handleSearch} placeholder="Search by name..." className="field pl-10"/></div></div>
+    {loading ? (
+      <div className="flex items-center justify-center py-10"><p className="mono text-xs font-bold uppercase text-blue-700">Loading users...</p></div>
+    ) : error ? (
+      <div className="flex flex-col items-center justify-center py-20 border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><p className="mono text-xs font-bold uppercase text-red-600">{error}</p><button onClick={()=>fetchUsers()} className="mt-4 border-2 border-black bg-blue-600 text-white px-6 py-3 font-black uppercase hover:bg-blue-700 active:scale-95">Retry</button></div>
+    ) : (
+      <>
+        <div className="mb-4 flex items-center justify-between"><h2 className="text-xl font-black">{users.length} MEMBERS</h2></div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {users.length === 0 ? (
+            <div className="border-2 border-dashed border-black bg-blue-50 p-10 text-center"><Search className="mx-auto mb-3"/><h3 className="font-black">No users found.</h3>{query && <p className="mt-1 text-sm text-gray-600">No users found matching your search.</p>}{!query && <p className="mt-1 text-sm text-gray-600">No registered users available.</p>}</div>
+          ) : (
+            users.map(u=><PersonCard key={u.id} user={u} userId={userId} onOffer={()=>setView('offers')} onProfile={(user)=>alert(`${user.name}\n${user.bio||'No bio available'}`)}/>)
+          )}
+        </div>
+      </>
+    )}
   </div>
 }
 function Offers({setView}) {
@@ -542,7 +600,7 @@ function App() {
     <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={()=>setView('discover')} className="px-3 py-2 text-xs font-extrabold uppercase">Join Waitlist</button>{userName?(<div className="relative"><button onClick={()=>setShowAvatarMenu(!showAvatarMenu)} className="avatar-dropdown flex h-8 w-8 items-center justify-center border-2 border-black rounded-full bg-blue-600 text-white font-black text-sm uppercase hover:bg-blue-700 transition-colors duration-200 active:scale-95">{userInitial}</button>{showAvatarMenu&&<div className="avatar-dropdown absolute right-0 mt-2 w-48 border-2 border-black bg-white shadow-[4px_4px_0_#000] z-50"><div className="px-3 py-2 border-b-2 border-black bg-blue-50"><p className="mono text-[10px] font-bold uppercase text-black">{userName}</p>{userEmail&&<p className="mono text-[10px] font-bold uppercase text-gray-600">{userEmail}</p>}</div><button onClick={()=>{setShowAvatarMenu(false);setShowProfile(true)}} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><UserRound size={14}/> View Profile</button><button onClick={logout} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><LogOut size={14}/> Logout</button></div>}</div>):(<><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button></>)}</div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
       {mobileNav&&<div className="grid grid-cols-2 gap-2 border-t-2 border-black bg-white p-3 lg:hidden">{['Benefits','How it works','About Us','Sign up','Login','Join Waitlist'].map(x=><button key={x} onClick={()=>{setMobileNav(false);if(x==='Login')setView('login');else if(x==='Join Waitlist')setView('discover');else if(x==='Sign up')signup();else document.getElementById(x==='Benefits'?'benefits':x==='How it works'?'how':'about')?.scrollIntoView({behavior:'smooth'})}} className="border-2 border-black p-2 text-sm font-bold">{x}</button>)}</div>}
     </header>
-    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView}/>:view==='offers'?<Offers setView={setView}/>:view==='chat'?<Chat/>:view==='profile'?(<Profile close={()=>setShowProfile(false)} userId={userId} userName={userName} userEmail={userEmail} userBio={userBio} teachSkills={teachSkills} learnSkills={learnSkills} setUserName={setUserName} setUserBio={setUserBio} setTeachSkills={setTeachSkills} setLearnSkills={setLearnSkills} setEditMode={setEditMode} editMode={editMode}/>):<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
+    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView} userId={userId}/>:view==='offers'?<Offers setView={setView}/>:view==='chat'?<Chat/>:view==='profile'?(<Profile close={()=>setShowProfile(false)} userId={userId} userName={userName} userEmail={userEmail} userBio={userBio} teachSkills={teachSkills} learnSkills={learnSkills} setUserName={setUserName} setUserBio={setUserBio} setTeachSkills={setTeachSkills} setLearnSkills={setLearnSkills} setEditMode={setEditMode} editMode={editMode}/>):<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
       <div className="mt-10 grid gap-4 border-t-2 border-black pt-6 md:grid-cols-3" id="benefits"><div><Tag blue>WHY SKILLSWAP</Tag><h2 className="mt-2 text-xl font-black">Your skills have value.</h2><p className="mt-1 text-sm text-gray-600">Trade knowledge, grow confidence, and meet curious people.</p></div><div id="how"><Tag>HOW IT WORKS</Tag><h2 className="mt-2 text-xl font-black">Find. Exchange. Grow.</h2><p className="mt-1 text-sm text-gray-600">Discover a partner, agree on a skill swap, then learn together.</p></div><div id="about"><Tag>ABOUT US</Tag><h2 className="mt-2 text-xl font-black">Learning is better shared.</h2><p className="mt-1 text-sm text-gray-600">SkillSwap makes peer-to-peer learning accessible to everyone.</p></div></div>
     </main></div>
     <Journey view={view} setView={setView}/>
