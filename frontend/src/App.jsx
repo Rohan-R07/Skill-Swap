@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { API_BASE_URL } from './api.js'
 import {
   ArrowLeftRight, Menu, X, Home, MessageCircle, Users, Settings, CircleHelp,
   LogOut, Search, Send, Paperclip, Smile, Music2, Code2,
@@ -38,8 +39,8 @@ function Login({onLogin,onSignup}) {
     setLoading(true)
     try {
       const url = mode === 'register'
-        ? 'http://localhost:8080/api/auth/register'
-        : 'http://localhost:8080/api/auth/login'
+        ? `${API_BASE_URL}/api/auth/register`
+        : `${API_BASE_URL}/api/auth/login`
       const body = mode === 'register'
         ? {name, email, password, bio}
         : {email, password}
@@ -141,7 +142,7 @@ function Discover({setView,userId}) {
     setLoading(true)
     setError('')
     try{
-      const url = name ? `http://localhost:8080/api/users/discover?name=${encodeURIComponent(name)}` : 'http://localhost:8080/api/users/discover'
+      const url = name ? `${API_BASE_URL}/api/users/discover?name=${encodeURIComponent(name)}` : `${API_BASE_URL}/api/users/discover`
       const res=await fetch(url)
       if(!res.ok) throw new Error('Failed to load users')
       const data=await res.json()
@@ -261,7 +262,7 @@ function Profile({close, userId, userName, userEmail, userBio, teachSkills, lear
   const fetchTeachSkills=async()=>{
     if(!userId) return
     try{
-      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`)
+      const res=await fetch(`${API_BASE_URL}/api/users/${userId}/skills`)
       if(!res.ok) throw new Error('Failed to load skills')
       const data=await res.json()
       const teachOnly=data.filter(us=>us.type==='TEACH').map(us=>({
@@ -279,7 +280,7 @@ function Profile({close, userId, userName, userEmail, userBio, teachSkills, lear
   const fetchLearnSkills=async()=>{
     if(!userId) return
     try{
-      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`)
+      const res=await fetch(`${API_BASE_URL}/api/users/${userId}/skills`)
       if(!res.ok) throw new Error('Failed to load skills')
       const data=await res.json()
       const learnOnly=data.filter(us=>us.type==='LEARN').map(us=>({
@@ -302,7 +303,7 @@ function Profile({close, userId, userName, userEmail, userBio, teachSkills, lear
     setLoadingTeach(true)
     setTeachError('')
     try{
-      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`,{
+      const res=await fetch(`${API_BASE_URL}/api/users/${userId}/skills`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({name,category,type:'TEACH'})
@@ -335,7 +336,7 @@ function Profile({close, userId, userName, userEmail, userBio, teachSkills, lear
     setLoadingLearn(true)
     setLearnError('')
     try{
-      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`,{
+      const res=await fetch(`${API_BASE_URL}/api/users/${userId}/skills`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({name,category,type:'LEARN'})
@@ -365,7 +366,7 @@ function Profile({close, userId, userName, userEmail, userBio, teachSkills, lear
     setLoadingTeach(true)
     setTeachError('')
     try{
-      await fetch(`http://localhost:8080/api/users/${userId}/skills/${userSkillId}`,{method:'DELETE'})
+      await fetch(`${API_BASE_URL}/api/users/${userId}/skills/${userSkillId}`,{method:'DELETE'})
       setTeachSkills(teachSkills.filter(s=>s.userSkillId!==userSkillId))
     }catch(err){
       setTeachError(err.message)
@@ -379,7 +380,7 @@ function Profile({close, userId, userName, userEmail, userBio, teachSkills, lear
     setLoadingLearn(true)
     setLearnError('')
     try{
-      await fetch(`http://localhost:8080/api/users/${userId}/skills/${userSkillId}`,{method:'DELETE'})
+      await fetch(`${API_BASE_URL}/api/users/${userId}/skills/${userSkillId}`,{method:'DELETE'})
       setLearnSkills(learnSkills.filter(s=>s.userSkillId!==userSkillId))
     }catch(err){
       setLearnError(err.message)

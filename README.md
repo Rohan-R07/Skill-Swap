@@ -1,8 +1,10 @@
-# SkillSwap
+# SkillSwap – Peer-to-Peer Skill Exchange Platform
 
-A peer-to-peer skill exchange platform developed as a college OOP project.
+SkillSwap is a peer-to-peer skill exchange platform developed as a college OOP project.
 
-SkillSwap lets users register, log in, list skills they can teach and skills they want to learn, and send skill exchange offers to other users. The backend is a Spring Boot REST API backed by PostgreSQL. The frontend is a React + Vite application with Tailwind CSS styling.
+The platform lets users register, log in, list skills they can teach and skills they want to learn, discover other users, and explore potential skill exchanges. A user who knows Java and wants to learn React can discover another user who knows React and wants to learn Java, then initiate a skill exchange.
+
+The backend is a Spring Boot REST API backed by PostgreSQL (via Supabase). The frontend is a React + Vite application with Tailwind CSS styling. The frontend consumes backend REST APIs using the native `fetch` API.
 
 This is an **academic project and local prototype**. It is not a production-grade enterprise application, and it does not use AI, machine learning, or complex recommendation algorithms.
 
@@ -11,108 +13,148 @@ This is an **academic project and local prototype**. It is not a production-grad
 ## Table of Contents
 
 - [Project Overview](#project-overview)
-- [Core Features](#core-features)
+- [Key Features](#key-features)
 - [Technology Stack](#technology-stack)
-- [Backend Architecture](#backend-architecture)
-- [Project Directory Structure](#project-directory-structure)
-- [Database Schema and Entities](#database-schema-and-entities)
-- [API Documentation](#api-documentation)
-- [Swagger API Documentation](#swagger-api-documentation)
-- [Project Setup Instructions](#project-setup-instructions)
-- [Testing Instructions](#testing-instructions)
-- [Current Project Status](#current-project-status)
-- [Future Scope](#future-scope)
+- [System Architecture](#system-architecture)
+- [Database Design](#database-design)
+- [Backend API Documentation](#backend-api-documentation)
+- [Discover Page Workflow](#discover-page-workflow)
+- [Project Structure](#project-structure)
+- [Local Development Setup](#local-development-setup)
+- [Environment Variables](#environment-variables)
+- [Deployment Status](#deployment-status)
+- [Current Development Status](#current-development-status)
+- [Future Enhancements](#future-enhancements)
 - [Contributors](#contributors)
+- [License](#license)
 
 ---
 
 ## Project Overview
 
-SkillSwap is a simple peer-to-peer skill exchange platform. A user who knows Java and wants to learn React can discover another user who knows React and wants to learn Java, then initiate a skill exchange.
+SkillSwap addresses the problem of finding people to exchange skills with on a peer-to-peer basis. Instead of paid courses or formal training, the platform connects individuals who want to teach what they know with others who want to learn it.
 
-The platform allows users to:
+### Core Workflow
 
-- Register and log in.
-- Add skills they can teach (TEACH) and skills they want to learn (LEARN) to their profile.
-- View their own skill list.
-- Remove skill associations from their profile.
+1. A user registers and logs in.
+2. The user adds skills they can teach (TEACH) and skills they want to learn (LEARN) to their profile.
+3. The user browses other registered users through the Discover page.
+4. Each user card shows teaching skills, learning skills, and a bio.
+5. The user can initiate a skill exchange offer with another user.
 
 This is a college OOP project focused on clean Java object-oriented design, layered backend architecture, and REST API implementation.
 
 ---
 
-## Core Features
+## Key Features
 
-### Implemented
+### Authentication
 
 - User registration with BCrypt password hashing.
-- User login with BCrypt password verification (stateless credential check; no JWT or session token issued).
-- Duplicate email rejection during registration.
-- Add a skill to a user's profile (reusing an existing shared `Skill` record when name and category match).
-- Retrieve all skills associated with a user.
-- Delete a user-skill association (does not delete the shared `Skill` record).
-- Health-check endpoint (`GET /`).
-- Swagger UI for API exploration and testing.
+- User login with BCrypt password verification.
+- Duplicate email validation and rejection during registration.
+- Login error handling for invalid credentials.
+- Frontend authentication persistence using `localStorage` (key: `skillswap_user`).
+- Stateless credential verification — no JWT or server-side session token is issued.
 
-### Not Yet Implemented
+### User Profile
 
-- User discovery / browsing other users' profiles.
-- Exchange offer creation, acceptance, or rejection (the `ExchangeOffer` entity exists but has no controller or API).
-- Real-time chat.
-- Session scheduling.
-- Reviews and feedback.
-- Frontend-to-backend API integration (the frontend currently uses mock data).
-- Password reset and email verification.
+- View user ID, name, email, and bio.
+- Edit profile name and bio in the frontend.
+- Separate teaching and learning skill sections.
+- Add and remove teaching skills.
+- Add and remove learning skills.
+- Skills are stored through backend APIs and persist across sessions.
+
+### Skill Management
+
+- TEACH and LEARN skill types (via `SkillType` enum).
+- Skill categories.
+- `UserSkill` associations linking users to skills.
+- Duplicate skill prevention within the same type.
+- Individual skill removal via association ID.
+
+### Discover Users
+
+- Fetch registered users dynamically from the backend via `GET /api/users/discover`.
+- Display actual user names, bios, teaching skills, and learning skills.
+- Name-based search with partial and case-insensitive matching.
+- Optional exclusion of the logged-in user.
+- Loading, error, and empty states.
+- No hardcoded user cards or fabricated match percentages/ratings.
+
+### Exchange Offers
+
+Backend API endpoints exist for exchange offers, but full frontend integration is not yet completed:
+
+- `POST /api/offers` — Create a PENDING exchange offer.
+- `GET /api/offers/incoming/{userId}` — Retrieve offers received by a user.
+- `GET /api/offers/outgoing/{userId}` — Retrieve offers sent by a user.
+- `PUT /api/offers/{offerId}/accept/{userId}` — Accept a PENDING offer.
+- `PUT /api/offers/{offerId}/reject/{userId}` — Reject a PENDING offer.
+
+The frontend Discover page includes a "Send Exchange Offer" button per user card. It is disabled for the logged-in user's own card. Real offer creation and management workflows are pending full frontend integration.
+
+### Skill Rooms
+
+A "Skill Rooms" navigation item exists in the sidebar, but the dedicated room functionality and backend APIs are **not yet implemented**. It is listed as a planned feature.
 
 ---
 
 ## Technology Stack
 
-The following technologies are actually present in the project:
+### Frontend
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Language | Java 25 | Backend application code |
-| Backend Framework | Spring Boot 4.1.2 | Application framework |
-| Web Layer | Spring Web MVC | REST controllers and HTTP handling |
-| Persistence | Spring Data JPA | Repository abstraction |
-| ORM | Hibernate | Object-relational mapping |
-| Database | PostgreSQL 17 | Persistent data storage |
-| Database Driver | PostgreSQL JDBC | Java-to-database connectivity |
-| Build Tool | Apache Maven | Dependency and build management |
-| Password Hashing | spring-security-crypto (BCrypt) | Secure password storage |
-| API Documentation | springdoc-openapi 3.2.0 | Swagger UI and OpenAPI docs |
-| Frontend | React | User interface |
-| Frontend Tooling | Vite | Development server and bundler |
-| Frontend Styling | Tailwind CSS | Utility-first CSS |
-| Frontend Icons | lucide-react | Icon library |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| React | 18.3.1 | User interface library |
+| Vite | 6.0.5 | Development server and build tool |
+| JavaScript | ES6+ | Application language |
+| Tailwind CSS | 3.4.16 | Utility-first CSS styling |
+| lucide-react | 0.468.0 | Icon library |
+| react-router-dom | 6.28.0 | Client-side routing |
+| Fetch API | Native | HTTP client for backend API calls |
 
-**Note:** The `spring-boot-starter-websocket` dependency is declared in `pom.xml`, but no WebSocket controllers or chat endpoints are implemented. The frontend does not currently call any backend API endpoints; it uses hardcoded mock data.
+### Backend
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Java | 25 | Application language |
+| Spring Boot | 4.1.2 | Application framework |
+| Spring Web MVC | 4.1.2 | REST controllers and HTTP handling |
+| Spring Data JPA | 4.1.2 | Repository abstraction |
+| Hibernate ORM | 4.1.2 | Object-relational mapping |
+| springdoc-openapi | 3.2.0 | Swagger UI and OpenAPI documentation |
+| spring-security-crypto | Managed by Spring Boot BOM | BCrypt password hashing |
+
+### Database
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| PostgreSQL | 17 | Persistent data storage |
+| Supabase | — | PostgreSQL hosting |
+
+### Build Tool
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Apache Maven | 3.9.x | Dependency and build management |
+
+**Note:** The `spring-boot-starter-websocket` dependency is declared in `pom.xml`, but no WebSocket controllers or chat endpoints are implemented.
 
 ---
 
-## Backend Architecture
+## System Architecture
 
 The backend follows a layered Spring Boot architecture:
 
-```text
-Client (Browser / Swagger UI / Frontend)
-        |
-   HTTP / REST
-        |
-+---------------------+
-|   Controller Layer  |  Handles HTTP requests and responses
-+---------------------+
-|    Service Layer    |  Contains business logic
-+---------------------+
-|  Repository Layer   |  Spring Data JPA data access
-+---------------------+
-|   Model / Entity    |  JPA entities mapped to DB tables
-+---------------------+
-|       DTO Layer     |  Request and response data objects
-+---------------------+
-        |
-   PostgreSQL
+```mermaid
+graph TD
+    Client[Client<br/>Browser / Swagger UI / Frontend] -->|HTTP / REST API| Controller[Controller Layer<br/>Spring Web MVC REST Controllers]
+    Controller --> Service[Service Layer<br/>Business Logic]
+    Service --> Repository[Repository Layer<br/>Spring Data JPA]
+    Repository --> ORM[Hibernate ORM]
+    ORM --> DB[(PostgreSQL Database<br/>via Supabase)]
 ```
 
 ### Controller Layer
@@ -121,7 +163,7 @@ Receives HTTP requests, validates input, calls services, and returns `ResponseEn
 
 ### Service Layer
 
-Contains business logic such as checking for duplicate emails, hashing passwords, verifying credentials, reusing existing `Skill` records, and enforcing unique skill associations per user.
+Contains business logic such as checking for duplicate emails, hashing passwords, verifying credentials, managing skill associations, and processing exchange offers.
 
 ### Repository Layer
 
@@ -137,74 +179,7 @@ Plain Java objects used to transfer request and response data between the client
 
 ---
 
-## Project Directory Structure
-
-```text
-Skill-Swap/
-├── backend/
-│   ├── .mvn/wrapper/
-│   ├── database/
-│   │   └── queries.sql
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/example/backend/
-│   │   │   │   ├── BackendApplication.java
-│   │   │   │   ├── config/
-│   │   │   │   │   └── PasswordConfig.java
-│   │   │   │   ├── controller/
-│   │   │   │   │   ├── AuthController.java
-│   │   │   │   │   ├── GlobalExceptionHandler.java
-│   │   │   │   │   ├── SkillController.java
-│   │   │   │   │   └── TestController.java
-│   │   │   │   ├── dto/
-│   │   │   │   │   ├── AddSkillRequest.java
-│   │   │   │   │   ├── AuthResponse.java
-│   │   │   │   │   ├── LoginRequest.java
-│   │   │   │   │   └── RegisterRequest.java
-│   │   │   │   ├── model/
-│   │   │   │   │   ├── ExchangeOffer.java
-│   │   │   │   │   ├── OfferStatus.java
-│   │   │   │   │   ├── Skill.java
-│   │   │   │   │   ├── SkillType.java
-│   │   │   │   │   ├── User.java
-│   │   │   │   │   └── UserSkill.java
-│   │   │   │   ├── repository/
-│   │   │   │   │   ├── SkillRepository.java
-│   │   │   │   │   ├── UserRepository.java
-│   │   │   │   │   └── UserSkillRepository.java
-│   │   │   │   └── service/
-│   │   │   │       ├── AuthService.java
-│   │   │   │       ├── EmailAlreadyExistsException.java
-│   │   │   │       ├── InvalidCredentialsException.java
-│   │   │   │       └── SkillService.java
-│   │   │   └── resources/
-│   │   │       └── application.properties
-│   │   └── test/
-│   │       └── java/com/example/backend/
-│   │           └── BackendApplicationTests.java
-│   ├── HELP.md
-│   ├── mvnw
-│   ├── mvnw.cmd
-│   └── pom.xml
-├── frontend/
-│   ├── index.html
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   ├── vite.config.js
-│   └── src/
-│       ├── App.jsx
-│       ├── main.jsx
-│       └── styles.css
-└── README.md
-```
-
-**Package:** `com.example.backend`
-
----
-
-## Database Schema and Entities
+## Database Design
 
 The database name is `skill-swap`. Hibernate is configured with `ddl-auto=update`, so tables are created automatically on application startup.
 
@@ -259,9 +234,19 @@ Table: `exchange_offers`
 | `offeredSkill` | `Skill` | `@ManyToOne`, `nullable = false` | Skill the sender offers to teach |
 | `requestedSkill` | `Skill` | `@ManyToOne`, `nullable = false` | Skill the sender wants to learn |
 | `status` | `OfferStatus` | `@Enumerated(STRING)`, `nullable = false`, default `PENDING` | Offer lifecycle status |
-| `createdAt` | `LocalDateTime` | `nullable = false` | Timestamp when the offer was created (set via `@PrePersist`) |
+| `createdAt` | `LocalDateTime` | `nullable = false` | Timestamp when the offer was created |
 
-**Note:** The `ExchangeOffer` entity exists but has **no controller, service, or API endpoints** implemented. It is part of the data model for future work.
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    User ||--o{ UserSkill : "has"
+    Skill ||--o{ UserSkill : "is part of"
+    User ||--o{ ExchangeOffer : "sends"
+    User ||--o{ ExchangeOffer : "receives"
+    Skill ||--o{ ExchangeOffer : "offered as"
+    Skill ||--o{ ExchangeOffer : "requested as"
+```
 
 ### Enum: SkillType
 
@@ -277,7 +262,7 @@ Represents the lifecycle state of an exchange offer.
 
 ---
 
-## API Documentation
+## Backend API Documentation
 
 All backend endpoints are under the base URL `http://localhost:8080`.
 
@@ -291,18 +276,13 @@ All backend endpoints are under the base URL `http://localhost:8080`.
 | Response | Plain text: `SkillSwap Backend is running!` |
 | Success Status | `200 OK` |
 
----
+### Authentication
 
-### Endpoint: POST /api/auth/register
+#### POST /api/auth/register
 
-| Property | Value |
-|----------|-------|
-| Method | `POST` |
-| URL | `/api/auth/register` |
-| Purpose | Register a new user account. Password is hashed with BCrypt before storage. |
-| Request Body | `RegisterRequest` |
+Registers a new user account. Password is hashed with BCrypt before storage.
 
-**Example Request:**
+**Request Body:**
 
 ```json
 {
@@ -333,18 +313,11 @@ All backend endpoints are under the base URL `http://localhost:8080`.
 | `400 Bad Request` | Validation error (missing name, invalid email, password shorter than 6 characters). |
 | `409 Conflict` | Email already registered. |
 
----
+#### POST /api/auth/login
 
-### Endpoint: POST /api/auth/login
+Verifies user credentials against the stored BCrypt hash. This MVP verifies credentials but does **not** issue a persistent authentication token or establish a secured session.
 
-| Property | Value |
-|----------|-------|
-| Method | `POST` |
-| URL | `/api/auth/login` |
-| Purpose | Verify user credentials against the stored BCrypt hash. This MVP verifies credentials but does **not** issue a persistent authentication token or establish a secured session. |
-| Request Body | `LoginRequest` |
-
-**Example Request:**
+**Request Body:**
 
 ```json
 {
@@ -375,19 +348,15 @@ All backend endpoints are under the base URL `http://localhost:8080`.
 
 **Note:** The `passwordHash` field is never included in any API response.
 
----
+### Skill Management
 
-### Endpoint: POST /api/users/{userId}/skills
+#### POST /api/users/{userId}/skills
 
-| Property | Value |
-|----------|-------|
-| Method | `POST` |
-| URL | `/api/users/{userId}/skills` |
-| Purpose | Add a skill to a user's profile. Reuses an existing `Skill` record when name and category match (case-insensitive). Prevents duplicate user-skill-type associations. |
-| Path Parameter | `userId` (Long) — ID of the user |
-| Request Body | `AddSkillRequest` |
+Adds a skill to a user's profile. Reuses an existing `Skill` record when name and category match (case-insensitive). Prevents duplicate user-skill-type associations.
 
-**Example Request:**
+**Path Parameter:** `userId` (Long) — ID of the user
+
+**Request Body:**
 
 ```json
 {
@@ -420,16 +389,11 @@ Returns the created `UserSkill` object:
 | `404 Not Found` | User with the given `userId` does not exist. |
 | `409 Conflict` | The user already has this skill with this type. |
 
----
+#### GET /api/users/{userId}/skills
 
-### Endpoint: GET /api/users/{userId}/skills
+Retrieves all skills associated with a particular user.
 
-| Property | Value |
-|----------|-------|
-| Method | `GET` |
-| URL | `/api/users/{userId}/skills` |
-| Purpose | Retrieve all skills associated with a particular user. |
-| Path Parameter | `userId` (Long) — ID of the user |
+**Path Parameter:** `userId` (Long) — ID of the user
 
 **Success Response (`200 OK`):**
 
@@ -458,16 +422,14 @@ Returns a list of `UserSkill` objects:
 |--------|-----------|
 | `404 Not Found` | User with the given `userId` does not exist. |
 
----
+#### DELETE /api/users/{userId}/skills/{userSkillId}
 
-### Endpoint: DELETE /api/users/{userId}/skills/{userSkillId}
+Removes the association between a user and a skill. Does **not** delete the shared `Skill` record itself.
 
-| Property | Value |
-|----------|-------|
-| Method | `DELETE` |
-| URL | `/api/users/{userId}/skills/{userSkillId}` |
-| Purpose | Remove the association between a user and a skill. Does **not** delete the shared `Skill` record itself. |
-| Path Parameters | `userId` (Long) — ID of the user<br>`userSkillId` (Long) — ID of the `UserSkill` association |
+**Path Parameters:**
+
+- `userId` (Long) — ID of the user
+- `userSkillId` (Long) — ID of the `UserSkill` association
 
 **Success Response (`204 No Content`):**
 
@@ -479,271 +441,505 @@ No response body.
 |--------|-----------|
 | `404 Not Found` | The skill association was not found for this user. |
 
+### User Discovery
+
+#### GET /api/users/discover
+
+Retrieves registered users with their teaching and learning skills. Optionally excludes a user by ID.
+
+**Query Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | String | No | Optional partial name to search users by (case-insensitive). |
+| `excludeUserId` | Long | No | ID of the user to exclude from discovery results (e.g., the logged-in user). |
+
+**Examples:**
+
+```
+GET /api/users/discover
+GET /api/users/discover?name=Rohan
+GET /api/users/discover?excludeUserId=1
+GET /api/users/discover?name=Rohan&excludeUserId=1
+```
+
+**Success Response (`200 OK`):**
+
+Returns a list of `UserDiscoveryDTO` objects:
+
+```json
+[
+  {
+    "id": 1,
+    "name": "Rohan",
+    "email": "rohan@example.com",
+    "bio": "Android developer",
+    "teachSkills": [
+      { "name": "Kotlin", "category": "Programming" }
+    ],
+    "learnSkills": [
+      { "name": "Spring Boot", "category": "Backend Development" }
+    ]
+  }
+]
+```
+
+**Behavior:**
+
+- If `name` is missing or blank, returns all discoverable users.
+- If `name` is provided, searches user names using partial, case-insensitive matching.
+- Leading/trailing whitespace in `name` is trimmed.
+- The user specified by `excludeUserId` is excluded from results.
+- If no users match, returns an empty array.
+- `passwordHash` is never exposed in the response.
+
+#### Exchange Offers
+
+#### POST /api/offers
+
+Creates a PENDING exchange offer from sender to receiver.
+
+**Request Body:**
+
+```json
+{
+  "senderId": 1,
+  "receiverId": 2,
+  "offeredSkillId": 1,
+  "requestedSkillId": 2
+}
+```
+
+**Success Response (`201 Created`):**
+
+Returns an `ExchangeOfferResponse` object.
+
+**Error Responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `400 Bad Request` | Validation error or business rule violation (e.g., self-offer, missing skill ownership). |
+| `404 Not Found` | User or skill not found. |
+
+#### GET /api/offers/incoming/{userId}
+
+Retrieves all exchange offers received by the specified user.
+
+**Success Response (`200 OK`):**
+
+Returns a list of `ExchangeOfferResponse` objects.
+
+**Error Responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `404 Not Found` | User not found. |
+
+#### GET /api/offers/outgoing/{userId}
+
+Retrieves all exchange offers sent by the specified user.
+
+**Success Response (`200 OK`):**
+
+Returns a list of `ExchangeOfferResponse` objects.
+
+**Error Responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `404 Not Found` | User not found. |
+
+#### PUT /api/offers/{offerId}/accept/{userId}
+
+Accepts a PENDING exchange offer. Only the receiver can accept. Changes status to `ACCEPTED`.
+
+**Path Parameters:**
+
+- `offerId` (Long) — ID of the offer to accept
+- `userId` (Long) — ID of the user accepting the offer (must be the receiver)
+
+**Success Response (`200 OK`):**
+
+Returns the updated `ExchangeOfferResponse` object.
+
+**Error Responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `403 Forbidden` | Only the receiver can accept this offer. |
+| `404 Not Found` | Offer not found. |
+| `409 Conflict` | Offer is already processed. |
+
+#### PUT /api/offers/{offerId}/reject/{userId}
+
+Rejects a PENDING exchange offer. Only the receiver can reject. Changes status to `REJECTED`.
+
+**Path Parameters:**
+
+- `offerId` (Long) — ID of the offer to reject
+- `userId` (Long) — ID of the user rejecting the offer (must be the receiver)
+
+**Success Response (`200 OK`):**
+
+Returns the updated `ExchangeOfferResponse` object.
+
+**Error Responses:**
+
+| Status | Condition |
+|--------|-----------|
+| `403 Forbidden` | Only the receiver can reject this offer. |
+| `404 Not Found` | Offer not found. |
+| `409 Conflict` | Offer is already processed. |
+
 ---
 
-## Swagger API Documentation
+## Discover Page Workflow
 
-Swagger UI is configured via `springdoc-openapi-starter-webmvc-ui`.
+The Discover page consumes the Discovery API as follows:
 
-When the application is running, access the interactive API documentation at:
+### Initial Loading
 
-```
-http://localhost:8080/swagger-ui/index.html
-```
-
-The OpenAPI specification is available at:
+When the Discover page opens, it calls:
 
 ```
-http://localhost:8080/v3/api-docs
+GET http://localhost:8080/api/users/discover
 ```
 
-### How to Use Swagger UI
+No query parameters are passed during the initial request. The endpoint returns all registered users.
 
-1. Start the backend application (see [Project Setup Instructions](#project-setup-instructions)).
-2. Open `http://localhost:8080/swagger-ui/index.html` in a browser.
-3. Expand the `AuthController` section to test:
-   - `POST /api/auth/register`
-   - `POST /api/auth/login`
-4. Expand the `SkillController` section to test:
-   - `POST /api/users/{userId}/skills`
-   - `GET /api/users/{userId}/skills`
-   - `DELETE /api/users/{userId}/skills/{userSkillId}`
-5. Click **Try it out**, edit the example JSON request body, and click **Execute**.
-6. Review the response code, response body, and headers.
+### Name-Based Search
+
+When the user types in the search input, the frontend calls:
+
+```
+GET http://localhost:8080/api/users/discover?name={searchTerm}
+```
+
+- Search is debounced (300ms) to avoid excessive requests.
+- Search is partial and case-insensitive (handled by the backend).
+- Leading/trailing whitespace is trimmed.
+- Clearing the search input refetches all users without the `name` parameter.
+
+### Response Mapping
+
+The API response is mapped to Discover cards as follows:
+
+| API Field | Card Display |
+|-----------|-------------|
+| `name` | User name (heading) |
+| `bio` | User bio (description text) |
+| `teachSkills[].name` | "Can teach:" tag |
+| `teachSkills[].category` | Category shown in parentheses |
+| `learnSkills[].name` | "Wants to learn:" tag |
+| `learnSkills[].category` | Category shown in parentheses |
+| `name` (first letters) | Auto-generated avatar initials |
+
+### States
+
+| State | Display |
+|-------|---------|
+| Loading | "Loading users..." indicator |
+| Error | Error message with Retry button |
+| Empty (no users) | "No users found." message |
+| Empty (search no match) | "No users found matching your search." message |
+
+### Workflow Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend (Discover Page)
+    participant B as Backend (DiscoveryController)
+    participant D as Database
+
+    U->>F: Open Discover page
+    F->>B: GET /api/users/discover
+    B->>D: Find all users + skills
+    D-->>B: User data with teach/learn skills
+    B-->>F: UserDiscoveryDTO array
+    F->>U: Render user cards
+    
+    U->>F: Type search term
+    F->>B: GET /api/users/discover?name={term}
+    B->>D: Find users by name (case-insensitive)
+    D-->>B: Filtered user data
+    B-->>F: Filtered UserDiscoveryDTO array
+    F->>U: Display matching results
+```
 
 ---
 
-## Project Setup Instructions
+## Project Structure
+
+```
+Skill-Swap/
+├── backend/
+│   ├── .mvn/wrapper/
+│   ├── mvnw
+│   ├── mvnw.cmd
+│   ├── pom.xml
+│   ├── HELP.md
+│   ├── backend.iml (implicit)
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/example/backend/
+│   │   │   │   ├── BackendApplication.java
+│   │   │   │   ├── config/
+│   │   │   │   │   └── PasswordConfig.java
+│   │   │   │   ├── controller/
+│   │   │   │   │   ├── AuthController.java
+│   │   │   │   │   ├── DiscoveryController.java
+│   │   │   │   │   ├── ExchangeOfferController.java
+│   │   │   │   │   ├── GlobalExceptionHandler.java
+│   │   │   │   │   ├── SkillController.java
+│   │   │   │   │   └── TestController.java
+│   │   │   │   ├── dto/
+│   │   │   │   │   ├── AddSkillRequest.java
+│   │   │   │   │   ├── AuthResponse.java
+│   │   │   │   │   ├── CreateOfferRequest.java
+│   │   │   │   │   ├── ExchangeOfferResponse.java
+│   │   │   │   │   ├── LoginRequest.java
+│   │   │   │   │   ├── RegisterRequest.java
+│   │   │   │   │   └── SkillDTO.java
+│   │   │   │   │   └── UserDiscoveryDTO.java
+│   │   │   │   ├── model/
+│   │   │   │   │   ├── ExchangeOffer.java
+│   │   │   │   │   ├── OfferStatus.java
+│   │   │   │   │   ├── Skill.java
+│   │   │   │   │   ├── SkillType.java
+│   │   │   │   │   ├── User.java
+│   │   │   │   │   └── UserSkill.java
+│   │   │   │   ├── repository/
+│   │   │   │   │   ├── SkillRepository.java
+│   │   │   │   │   ├── UserRepository.java
+│   │   │   │   │   └── UserSkillRepository.java
+│   │   │   │   └── service/
+│   │   │   │       ├── AuthService.java
+│   │   │   │   │   ├── DiscoveryService.java
+│   │   │   │   │   ├── EmailAlreadyExistsException.java
+│   │   │   │   │   ├── ExchangeOfferService.java
+│   │   │   │   │   ├── InvalidCredentialsException.java
+│   │   │   │   │   ├── OfferAccessDeniedException.java
+│   │   │   │   │   ├── OfferAlreadyProcessedException.java
+│   │   │   │   │   └── SkillService.java
+│   │   │   └── resources/
+│   │   │       └── application.properties
+│   │   └── test/
+│   │       └── java/com/example/backend/
+│   │           └── BackendApplicationTests.java
+│   └── target/
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── vite.config.js
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   └── main.jsx
+│   └── dist/
+└── README.md
+```
+
+**Backend Package:** `com.example.backend`
+
+---
+
+## Local Development Setup
 
 ### Prerequisites
 
 - **Java JDK 25** (configured in `backend/pom.xml` as `java.version`)
-- **Apache Maven 3.9.x**
-- **PostgreSQL 17**
-- A Java IDE (e.g., IntelliJ IDEA, Eclipse, VS Code) — optional
+- **Apache Maven 3.9.x** (or Maven Wrapper included in the project)
+- **Node.js** (compatible with frontend `package.json`)
+- **PostgreSQL 17** (via Supabase or local installation)
 - **Git**
 
-### 1. Clone the Repository
+### Backend Setup
 
-```powershell
-git clone <repository-url>
-cd Skill-Swap
-```
+1. Navigate to the backend directory:
 
-### 2. Configure PostgreSQL
+   ```powershell
+   cd backend
+   ```
 
-Install PostgreSQL 17 and start the service. Create the `skill-swap` database:
+2. Configure environment variables. Edit `backend/src/main/resources/application.properties` or set environment variables:
 
-```powershell
-# Connect to PostgreSQL as the postgres user, then run:
-CREATE DATABASE "skill-swap";
-```
+   ```properties
+   spring.datasource.url=${DB_URL}
+   spring.datasource.username=${DB_USERNAME}
+   spring.datasource.password=${DB_PASSWORD}
+   spring.datasource.driver-class-name=org.postgresql.Driver
+   spring.jpa.hibernate.ddl-auto=update
+   spring.jpa.show-sql=true
+   ```
 
-### 3. Configure Backend Database Connection
+   Use placeholders for sensitive configuration. Never include actual database credentials in version control.
 
-Edit `backend/src/main/resources/application.properties`. The file already contains:
+3. Ensure the `skill-swap` database exists in your PostgreSQL/Supabase instance:
 
-```properties
-spring.application.name=backend
+   ```sql
+   CREATE DATABASE "skill-swap";
+   ```
 
-spring.datasource.url=jdbc:postgresql://localhost:5432/skill-swap
-spring.datasource.username=postgres
-spring.datasource.password=8727
+4. Build and run the backend:
 
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
-```
+   ```powershell
+   # Using Maven Wrapper
+   .\mvnw.cmd spring-boot:run
 
-Update `spring.datasource.username` and `spring.datasource.password` to match your local PostgreSQL credentials. Use placeholders or environment-specific values; do not commit real passwords to version control.
+   # Or with globally installed Maven
+   mvn spring-boot:run
+   ```
 
-### 4. Build and Run the Backend
+   The backend starts at `http://localhost:8080`.
 
-Open a terminal in the `backend` directory:
+5. Access Swagger UI:
 
-```powershell
-cd backend
-```
+   ```
+   http://localhost:8080/swagger-ui/index.html
+   ```
 
-Using the Maven Wrapper:
+   The OpenAPI specification is available at:
 
-```powershell
-.\mvnw.cmd spring-boot:run
-```
+   ```
+   http://localhost:8080/v3/api-docs
+   ```
 
-Or, if Maven is installed globally:
+### Frontend Setup
 
-```powershell
-mvn spring-boot:run
-```
+1. Navigate to the frontend directory:
 
-To compile only:
+   ```powershell
+   cd frontend
+   ```
 
-```powershell
-.\mvnw.cmd compile
-```
+2. Install dependencies:
 
-The backend starts at `http://localhost:8080`.
+   ```powershell
+   npm install
+   ```
 
-### 5. Run the Frontend
+3. Run the development server:
 
-Open a separate terminal in the `frontend` directory:
+   ```powershell
+   npm run dev
+   ```
 
-```powershell
-cd frontend
-npm install
-npm run dev
-```
+   Vite will print a local URL, commonly `http://localhost:5173`.
 
-Vite will print a local URL, commonly `http://localhost:5173`.
+4. Build for production:
 
-**Note:** The frontend currently uses mock data and does not call backend API endpoints. Backend API testing should be done through Swagger UI.
+   ```powershell
+   npm run build
+   ```
 
----
+### Frontend API Base URL
 
-## Testing Instructions
-
-Use Swagger UI to test the implemented APIs:
-
-### 1. Register a User
-
-Open `POST /api/auth/register` in Swagger UI and execute:
-
-```json
-{
-  "name": "user",
-  "email": "user@example.com",
-  "password": "password123",
-  "bio": "Android and AI developer"
-}
-```
-
-Expected: `201 Created` with the user profile (no `passwordHash`).
-
-### 2. Verify the User in PostgreSQL
-
-Connect to the `skill-swap` database and confirm the row exists:
-
-```sql
-SELECT id, name, email, bio FROM users WHERE email = 'user@example.com';
-```
-
-Confirm the `password_hash` column contains a BCrypt hash (starts with `$2a$` or `$2b$`), not plain text.
-
-### 3. Test Duplicate Email Registration
-
-Repeat the registration request with the same email.
-
-Expected: `409 Conflict`.
-
-### 4. Test Successful Login
-
-Open `POST /api/auth/login` and execute:
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-Expected: `200 OK` with the user profile.
-
-### 5. Test Incorrect Password Login
-
-Use the same email with an incorrect password.
-
-Expected: `401 Unauthorized`.
-
-### 6. Add a Skill (TEACH)
-
-Open `POST /api/users/{userId}/skills` and execute (replace `{userId}` with the ID from registration):
-
-```json
-{
-  "name": "Java",
-  "category": "Programming",
-  "type": "TEACH"
-}
-```
-
-Expected: `201 Created`.
-
-### 7. Add a Skill (LEARN)
-
-```json
-{
-  "name": "React",
-  "category": "Frontend",
-  "type": "LEARN"
-}
-```
-
-Expected: `201 Created`.
-
-### 8. Retrieve the User's Skills
-
-Open `GET /api/users/{userId}/skills` and execute.
-
-Expected: `200 OK` with a list of the user's skills.
-
-### 9. Delete a Skill Association
-
-Open `DELETE /api/users/{userId}/skills/{userSkillId}` and execute, using a `userSkillId` from the retrieved list.
-
-Expected: `204 No Content`.
-
-### 10. Verify Changes in PostgreSQL
-
-```sql
-SELECT * FROM user_skills;
-SELECT * FROM skills;
-```
+The frontend currently uses a hardcoded backend base URL of `http://localhost:8080` in `frontend/src/App.jsx`. Production API URL configuration via environment variables is pending.
 
 ---
 
-## Current Project Status
+## Environment Variables
 
-### Implemented
+The following environment variables are required for the backend:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DB_URL` | PostgreSQL JDBC connection URL | `jdbc:postgresql://localhost:5432/skill-swap` |
+| `DB_USERNAME` | PostgreSQL username | `postgres` |
+| `DB_PASSWORD` | PostgreSQL password | *(use a placeholder)* |
+
+Create a `.env` file in the `backend/` directory (not committed to Git) or set these variables in your deployment environment:
+
+```
+DB_URL=jdbc:postgresql://localhost:5432/skill-swap
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
+**Security:** Do not commit `.env` files or real credentials to Git. Add `.env` to `.gitignore`.
+
+---
+
+## Deployment Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Backend | Local development | Runs on `http://localhost:8080` |
+| Frontend | Local development | Runs on `http://localhost:5173` |
+| Database | Supabase PostgreSQL | Configured via environment variables |
+| Backend Deployment | Planned | Render deployment planned, not completed |
+| Frontend Deployment | Planned | Vercel deployment planned, not completed |
+
+No production URLs are available. Deployments are planned but not yet executed.
+
+---
+
+## Current Development Status
+
+### Completed / Implemented
 
 - Spring Boot backend foundation (`BackendApplication.java`, `application.properties`).
 - PostgreSQL database configuration (`skill-swap` database, `ddl-auto=update`).
 - Entity and database modelling: `User`, `Skill`, `UserSkill`, `ExchangeOffer` entities with `SkillType` and `OfferStatus` enums.
 - Authentication API: `POST /api/auth/register`, `POST /api/auth/login` with BCrypt hashing, duplicate email handling, and validation.
 - Skill Management API: `POST /api/users/{userId}/skills`, `GET /api/users/{userId}/skills`, `DELETE /api/users/{userId}/skills/{userSkillId}`.
-- Global exception handling for `400`, `401`, and `409` responses.
+- Exchange Offer API: `POST /api/offers`, `GET /api/offers/incoming/{userId}`, `GET /api/offers/outgoing/{userId}`, `PUT /api/offers/{offerId}/accept/{userId}`, `PUT /api/offers/{offerId}/reject/{userId}`.
+- User Discovery API: `GET /api/users/discover` with optional `name` and `excludeUserId` query parameters.
+- Global exception handling for `400`, `401`, `403`, and `409` responses.
 - Swagger UI / OpenAPI documentation.
-- Frontend: React + Vite + Tailwind CSS application with mock data (UI only; no backend API integration).
+- Frontend: React + Vite + Tailwind CSS application.
+- Frontend authentication: Login/registration connected to backend APIs.
+- Frontend auth persistence: `localStorage` (key: `skillswap_user`).
+- Profile UI: View and edit user information, teaching skills, and learning skills.
+- Profile skills API integration: Teaching and learning skills connected to backend.
+- Dynamic Discover frontend: Real user data from Discovery API with name-based search.
+- Discover loading-state bug fix: `useRef` for request sequence tracking.
+- Disable Send Exchange Offer button for the logged-in user's own card.
 
-### Planned / Not Yet Implemented
+### In Progress / Pending
 
-- User Discovery APIs (browse other users, search, filter).
-- Exchange Offer APIs (create, accept, reject, view incoming/outgoing offers).
-- Real-time chat (WebSocket dependency declared but not implemented).
-- Frontend-to-backend integration (frontend currently uses hardcoded mock data).
-- Session scheduling.
-- Reviews and feedback.
-- Password reset and email verification.
-- JWT or session-based authentication (login currently performs stateless credential verification only).
+- Runtime testing of all deployed flows.
+- Proper individual user profile view from Discover (currently shows an alert).
+- Fully integrated exchange offer workflow on the frontend.
+- Dedicated Skill Rooms page and backend APIs.
+- Chat functionality (WebSocket dependency declared but not implemented).
+- Production deployment (Render backend, Vercel frontend).
+- Production authentication and authorization (JWT/session).
+- Additional discovery filters.
+- Session scheduling, reviews, and feedback.
 
 ---
 
-## Future Scope
+## Future Enhancements
 
-- Implement Exchange Offer controller and service.
-- Implement User Discovery APIs.
-- Connect the React frontend to the Spring Boot backend.
-- Add real-time chat using Spring WebSocket.
-- Add session scheduling and reviews.
-- Add JWT-based authentication for secured API access.
+The following items are clearly labeled as future work and are **not** part of the current implementation:
+
+- **Skill Rooms:** Dedicated room functionality and backend APIs.
+- **Chat:** Real-time messaging using Spring WebSocket.
+- **Complete Exchange Offer Workflow:** Full frontend integration for creating, accepting, and rejecting offers.
+- **Production Authentication:** JWT or session-based secured API access.
+- **Production Deployment:** Render backend and Vercel frontend deployment.
+- **Additional Discovery Filters:** More sophisticated search and filtering options.
+- **Session Scheduling:** Schedule skill exchange sessions.
+- **Reviews and Feedback:** User rating and review system.
 
 ---
 
 ## Contributors
 
-Contributor details are not available in the repository. Add names and GitHub profile links here as appropriate.
+Contributor details are not available in the repository.
 
 - **Backend Engineer:** Rohan R (identified in source comments)
 - Additional contributors: To be added
+
+---
+
+## License
+
+No license information is available in the repository. Do not assume a license exists.
 
 ---
