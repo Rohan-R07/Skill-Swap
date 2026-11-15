@@ -94,7 +94,7 @@ function Login({onLogin,onSignup}) {
   )
 }
 function Sidebar({view,setView,logout}) {
-  const nav=[['Dashboard',Home,'dashboard'],['Messages',MessageCircle,'chat'],['Skill Rooms',Users,'rooms'],['Settings',Settings,'settings'],['FAQ',CircleHelp,'faq']]
+  const nav=[['Dashboard',Home,'dashboard'],['Messages',MessageCircle,'chat'],['Skill Rooms',Users,'rooms'],['Settings',Settings,'settings'],['Profile',UserRound,'profile'],['FAQ',CircleHelp,'faq']]
   return <aside className="h-fit border-2 border-black bg-white p-3 shadow-[4px_4px_0_#000]">
     <div className="mb-4 flex items-center gap-2 px-2 py-3"><Logo small/></div>
     <nav className="space-y-1">{nav.map(([label,Icon,id])=><button key={id} onClick={()=>setView(id==='rooms'?'discover':id==='faq'?'dashboard':id)} className={`flex w-full items-center gap-3 border-2 px-3 py-3 text-left text-sm font-bold ${view===id?'border-black bg-blue-600 text-white shadow-[2px_2px_0_#000]':'border-transparent hover:border-black hover:bg-blue-50'}`}><Icon size={18}/>{label}</button>)}</nav>
@@ -181,11 +181,308 @@ function Journey({view,setView}) {
     </div>
   )
 }
+
+function Profile({close, userId, userName, userEmail, userBio, teachSkills, learnSkills, setUserName, setUserBio, setTeachSkills, setLearnSkills, setEditMode, editMode}) {
+  const [editName,setEditName]=useState(userName||'')
+  const [editBio,setEditBio]=useState(userBio||'')
+  const [newTeachSkill,setNewTeachSkill]=useState('')
+  const [newTeachCategory,setNewTeachCategory]=useState('')
+  const [newLearnSkill,setNewLearnSkill]=useState('')
+  const [newLearnCategory,setNewLearnCategory]=useState('')
+  const [loadingTeach,setLoadingTeach]=useState(false)
+  const [teachError,setTeachError]=useState('')
+  const [loadingLearn,setLoadingLearn]=useState(false)
+  const [learnError,setLearnError]=useState('')
+
+  useEffect(()=>{
+    if(!userId) return
+    fetchTeachSkills()
+    fetchLearnSkills()
+  },[userId])
+
+  const fetchTeachSkills=async()=>{
+    if(!userId) return
+    try{
+      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`)
+      if(!res.ok) throw new Error('Failed to load skills')
+      const data=await res.json()
+      const teachOnly=data.filter(us=>us.type==='TEACH').map(us=>({
+        userSkillId:us.id,
+        skillName:us.skill.name,
+        skillCategory:us.skill.category,
+        type:us.type
+      }))
+      setTeachSkills(teachOnly)
+    }catch(err){
+      setTeachError(err.message)
+    }
+  }
+
+  const fetchLearnSkills=async()=>{
+    if(!userId) return
+    try{
+      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`)
+      if(!res.ok) throw new Error('Failed to load skills')
+      const data=await res.json()
+      const learnOnly=data.filter(us=>us.type==='LEARN').map(us=>({
+        userSkillId:us.id,
+        skillName:us.skill.name,
+        skillCategory:us.skill.category,
+        type:us.type
+      }))
+      setLearnSkills(learnOnly)
+    }catch(err){
+      setLearnError(err.message)
+    }
+  }
+
+  const addTeachSkill=async()=>{
+    const name=newTeachSkill.trim()
+    const category=newTeachCategory.trim()
+    if(!name||!category) return
+    if(teachSkills.some(s=>s.skillName.toLowerCase()===name.toLowerCase()&&s.skillCategory.toLowerCase()===category.toLowerCase())) return
+    setLoadingTeach(true)
+    setTeachError('')
+    try{
+      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name,category,type:'TEACH'})
+      })
+      if(!res.ok){
+        const errData=await res.json().catch(()=>({}))
+        throw new Error(errData.message||'Failed to add skill')
+      }
+      const userSkill=await res.json()
+      setTeachSkills([...teachSkills,{
+        userSkillId:userSkill.id,
+        skillName:userSkill.skill.name,
+        skillCategory:userSkill.skill.category,
+        type:userSkill.type
+      }])
+      setNewTeachSkill('')
+      setNewTeachCategory('')
+    }catch(err){
+      setTeachError(err.message)
+    }finally{
+      setLoadingTeach(false)
+    }
+  }
+
+  const addLearnSkill=async()=>{
+    const name=newLearnSkill.trim()
+    const category=newLearnCategory.trim()
+    if(!name||!category) return
+    if(learnSkills.some(s=>s.skillName.toLowerCase()===name.toLowerCase()&&s.skillCategory.toLowerCase()===category.toLowerCase())) return
+    setLoadingLearn(true)
+    setLearnError('')
+    try{
+      const res=await fetch(`http://localhost:8080/api/users/${userId}/skills`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name,category,type:'LEARN'})
+      })
+      if(!res.ok){
+        const errData=await res.json().catch(()=>({}))
+        throw new Error(errData.message||'Failed to add skill')
+      }
+      const userSkill=await res.json()
+      setLearnSkills([...learnSkills,{
+        userSkillId:userSkill.id,
+        skillName:userSkill.skill.name,
+        skillCategory:userSkill.skill.category,
+        type:userSkill.type
+      }])
+      setNewLearnSkill('')
+      setNewLearnCategory('')
+    }catch(err){
+      setLearnError(err.message)
+    }finally{
+      setLoadingLearn(false)
+    }
+  }
+
+  const removeTeachSkill=async(userSkillId)=>{
+    if(!userId) return
+    setLoadingTeach(true)
+    setTeachError('')
+    try{
+      await fetch(`http://localhost:8080/api/users/${userId}/skills/${userSkillId}`,{method:'DELETE'})
+      setTeachSkills(teachSkills.filter(s=>s.userSkillId!==userSkillId))
+    }catch(err){
+      setTeachError(err.message)
+    }finally{
+      setLoadingTeach(false)
+    }
+  }
+
+  const removeLearnSkill=async(userSkillId)=>{
+    if(!userId) return
+    setLoadingLearn(true)
+    setLearnError('')
+    try{
+      await fetch(`http://localhost:8080/api/users/${userId}/skills/${userSkillId}`,{method:'DELETE'})
+      setLearnSkills(learnSkills.filter(s=>s.userSkillId!==userSkillId))
+    }catch(err){
+      setLearnError(err.message)
+    }finally{
+      setLoadingLearn(false)
+    }
+  }
+
+  const saveProfile=()=>{
+    setUserName(editName)
+    setUserBio(editBio)
+    setEditMode(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={close}>
+      <div className="max-w-[820px] w-full max-h-[90vh] overflow-y-auto border-[3px] border-black bg-white p-8 shadow-[8px_8px_0_#2563eb] profile-panel" onClick={e=>e.stopPropagation()}>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="mono text-xs font-bold uppercase tracking-widest text-blue-700">User Profile</p>
+            <h2 className="text-3xl font-black tracking-tight sm:text-4xl">My Profile<span className="text-blue-600">.</span></h2>
+          </div>
+          <button onClick={close} className="border-2 border-black p-2 hover:bg-blue-50" aria-label="Close profile"><X/></button>
+        </div>
+
+        <div className="mb-8 flex items-center gap-4">
+          <div className="flex h-20 w-20 items-center justify-center border-2 border-black bg-blue-600 text-white font-black text-3xl uppercase">
+            {userName ? userName.charAt(0).toUpperCase() : '?'}
+          </div>
+          <div>
+            <h3 className="text-xl font-black">{userName || 'User'}</h3>
+            <p className="mono text-[10px] font-bold uppercase text-gray-600">{userEmail || ''}</p>
+          </div>
+        </div>
+
+          <div className="space-y-6">
+            <div className="border-2 border-black p-6 shadow-[4px_4px_0_#000]">
+              <div className="mb-6 flex items-center justify-between gap-4">
+                <div>
+                  <p className="mono text-xs font-bold uppercase tracking-widest text-blue-700">Personal Information</p>
+                  <h4 className="text-xl font-black">Profile Details</h4>
+                </div>
+                {editMode ? (
+                  <button onClick={()=>setEditMode(false)} className="border-2 border-black px-4 py-2 text-sm font-bold uppercase hover:bg-blue-50">Cancel</button>
+                ) : (
+                  <button onClick={()=>setEditMode(true)} className="border-2 border-black px-4 py-2 text-sm font-bold uppercase hover:bg-blue-50">Edit Profile</button>
+                )}
+              </div>
+
+              {editMode ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold">Full Name</label>
+                    <input className="w-full border-2 border-black p-3 text-sm" value={editName} onChange={e=>setEditName(e.target.value)} required/>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold">Bio</label>
+                    <input className="w-full border-2 border-black p-3 text-sm" value={editBio} onChange={e=>setEditBio(e.target.value)} placeholder="Tell us about yourself"/>
+                  </div>
+                  <button onClick={saveProfile} className="border-2 border-black bg-blue-600 text-white px-6 py-3 font-black uppercase hover:bg-blue-700 active:scale-95">Save Changes</button>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="mono text-xs font-bold uppercase text-gray-600">User ID</span>
+                    <span className="font-black text-lg">{userId || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="mono text-xs font-bold uppercase text-gray-600">Name</span>
+                    <span className="font-black text-lg">{userName}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="mono text-xs font-bold uppercase text-gray-600">Email</span>
+                    <span className="font-black text-lg">{userEmail}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="mono text-xs font-bold uppercase text-gray-600">Bio</span>
+                    <span className="font-black text-lg">{userBio || 'No bio added yet'}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-2 border-black p-6 shadow-[4px_4px_0_#000]">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <p className="mono text-xs font-bold uppercase tracking-widest text-blue-700">Skills I Can Teach</p>
+                  <h4 className="text-xl font-black">Teaching Skills<span className="text-blue-600">.</span></h4>
+                </div>
+                {teachError && <p className="text-[10px] text-red-600 font-bold">{teachError}</p>}
+              </div>
+
+              <div className="space-y-3">
+                {teachSkills.length === 0 ? (
+                  <p className="text-[10px] text-gray-600 italic">No teaching skills added yet.</p>
+                ) : (
+                  teachSkills.map((s)=>(<div key={s.userSkillId} className="flex items-center justify-between gap-3 border-2 border-black px-4 py-3 bg-white"><span className="text-sm font-black">{s.skillName} <span className="mono text-[9px] text-gray-500">({s.skillCategory})</span></span><button onClick={()=>removeTeachSkill(s.userSkillId)} className="border-2 border-black px-3 py-2 text-[10px] font-bold hover:bg-red-600 hover:text-white active:scale-95">Remove</button></div>))
+                )}
+              </div>
+
+              <div className="space-y-2 mt-6">
+                <label className="block text-sm font-bold">Skill Name</label>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <input type="text" value={newTeachSkill} onChange={e=>setNewTeachSkill(e.target.value)} placeholder="Skill name" className="field border-2 border-black p-3 text-sm"/>
+                  <input type="text" value={newTeachCategory} onChange={e=>setNewTeachCategory(e.target.value)} placeholder="Category" className="field border-2 border-black p-3 text-sm"/>
+                </div>
+                <div className="mt-4">
+                  <button onClick={addTeachSkill} className="border-2 border-black bg-blue-600 text-white px-6 py-3 font-black uppercase hover:bg-blue-700 active:scale-95" disabled={loadingTeach}>{loadingTeach?'Adding...':'Add Skill'}</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-2 border-black p-6 shadow-[4px_4px_0_#000]">
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <p className="mono text-xs font-bold uppercase tracking-widest text-pink-600">Skills I Want to Learn</p>
+                  <h4 className="text-xl font-black">Learning Skills<span className="text-pink-600">.</span></h4>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {learnError && <p className="text-[10px] text-red-600 font-bold">{learnError}</p>}
+                {learnSkills.length === 0 ? (
+                  <p className="text-[10px] text-gray-600 italic">No learning skills added yet.</p>
+                ) : (
+                  learnSkills.map((s)=>(<div key={s.userSkillId} className="flex items-center justify-between gap-3 border-2 border-black px-4 py-3 bg-white"><span className="text-sm font-black">{s.skillName} <span className="mono text-[9px] text-gray-500">({s.skillCategory})</span></span><button onClick={()=>removeLearnSkill(s.userSkillId)} className="border-2 border-black px-3 py-2 text-[10px] font-bold hover:bg-red-600 hover:text-white active:scale-95">Remove</button></div>))
+                )}
+              </div>
+
+              <div className="space-y-2 mt-6">
+                <label className="block text-sm font-bold">Skill Name</label>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <input type="text" value={newLearnSkill} onChange={e=>setNewLearnSkill(e.target.value)} placeholder="Skill name" className="field border-2 border-black p-3 text-sm"/>
+                  <input type="text" value={newLearnCategory} onChange={e=>setNewLearnCategory(e.target.value)} placeholder="Category" className="field border-2 border-black p-3 text-sm"/>
+                </div>
+                <div className="mt-4">
+                  <button onClick={addLearnSkill} className="border-2 border-black bg-pink-600 text-white px-6 py-3 font-black uppercase hover:bg-pink-700 active:scale-95" disabled={loadingLearn}>{loadingLearn?'Adding...':'Add Skill'}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [view,setView]=useState('login'),[mobileNav,setMobileNav]=useState(false),[toast,setToast]=useState('')
+  const [userId,setUserId]=useState(null)
   const [userName,setUserName]=useState('')
   const [userEmail,setUserEmail]=useState('')
+  const [userBio,setUserBio]=useState('')
   const [showAvatarMenu,setShowAvatarMenu]=useState(false)
+  const [showProfile,setShowProfile]=useState(false)
+  const [editMode,setEditMode]=useState(false)
+  const [tempName,setTempName]=useState('')
+  const [tempBio,setTempBio]=useState('')
+  const [teachSkills,setTeachSkills]=useState([])
+  const [learnSkills,setLearnSkills]=useState([])
+  const [newSkillName,setNewSkillName]=useState('')
+  const [newSkillType,setNewSkillType]=useState('TEACH')
 
   useEffect(()=>{
     try {
@@ -193,8 +490,10 @@ function App() {
       if(stored) {
         const parsed=JSON.parse(stored)
         if(parsed && parsed.name && parsed.email) {
+          setUserId(parsed.id || null)
           setUserName(parsed.name)
           setUserEmail(parsed.email)
+          setUserBio(parsed.bio || '')
           setView('dashboard')
         }
       }
@@ -205,9 +504,11 @@ function App() {
 
   const login=(name='',email='',id=null,bio='')=>{
     localStorage.setItem('skillswap_user',JSON.stringify({id,name,email,bio}))
-    setView('dashboard')
+    setUserId(id)
     setUserName(name)
     setUserEmail(email)
+    setUserBio(bio)
+    setView('dashboard')
     setToast('Welcome to SkillSwap!')
     setTimeout(()=>setToast(''),2500)
   }
@@ -215,24 +516,51 @@ function App() {
   const logout=()=>{
     localStorage.removeItem('skillswap_user')
     setView('login')
+    setUserId(null)
     setUserName('')
     setUserEmail('')
+    setUserBio('')
+    setTeachSkills([])
+    setLearnSkills([])
     setShowAvatarMenu(false)
+    setShowProfile(false)
+    setEditMode(false)
     setToast('Logged out')
     setTimeout(()=>setToast(''),2000)
   }
   const userInitial=userName?userName.charAt(0).toUpperCase():'?'
-  useEffect(()=>{const handleClickOutside=(e)=>{if(showAvatarMenu&&!e.target.closest('.avatar-dropdown'))setShowAvatarMenu(false)};document.addEventListener('mousedown',handleClickOutside);return ()=>document.removeEventListener('mousedown',handleClickOutside)},[showAvatarMenu])
+  useEffect(()=>{
+    const handleClickOutside=(e)=>{if(showAvatarMenu&&!e.target.closest('.avatar-dropdown'))setShowAvatarMenu(false);if(showProfile&&!e.target.closest('.profile-panel'))setShowProfile(false)}
+    const handleKeyDown=(e)=>{if(e.key==='Escape'&&showProfile)setShowProfile(false)}
+    document.addEventListener('mousedown',handleClickOutside)
+    document.addEventListener('keydown',handleKeyDown)
+    return ()=>{document.removeEventListener('mousedown',handleClickOutside);document.removeEventListener('keydown',handleKeyDown)}
+  },[showAvatarMenu,showProfile])
   if(view==='login')return <Login onLogin={login} onSignup={signup}/>
-  const titles={dashboard:'Dashboard',discover:'Discover',offers:'Offers',chat:'Messages',rooms:'Skill Rooms',settings:'Settings',faq:'FAQ'}
+  const titles={dashboard:'Dashboard',discover:'Discover',offers:'Offers',chat:'Messages',rooms:'Skill Rooms',settings:'Settings',profile:'Profile',faq:'FAQ'}
   return <div className="min-h-screen bg-blue-50 pb-20">
-    <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={()=>setView('discover')} className="px-3 py-2 text-xs font-extrabold uppercase">Join Waitlist</button>{userName?(<div className="relative"><button onClick={()=>setShowAvatarMenu(!showAvatarMenu)} className="avatar-dropdown flex h-8 w-8 items-center justify-center border-2 border-black rounded-full bg-blue-600 text-white font-black text-sm uppercase hover:bg-blue-700 transition-colors duration-200 active:scale-95">{userInitial}</button>{showAvatarMenu&&<div className="avatar-dropdown absolute right-0 mt-2 w-48 border-2 border-black bg-white shadow-[4px_4px_0_#000] z-50"><div className="px-3 py-2 border-b-2 border-black bg-blue-50"><p className="mono text-[10px] font-bold uppercase text-black">{userName}</p>{userEmail&&<p className="mono text-[10px] font-bold uppercase text-gray-600">{userEmail}</p>}</div><button onClick={logout} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><LogOut size={14}/> Logout</button></div>}</div>):(<><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button></>)}</div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
+    <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={()=>setView('discover')} className="px-3 py-2 text-xs font-extrabold uppercase">Join Waitlist</button>{userName?(<div className="relative"><button onClick={()=>setShowAvatarMenu(!showAvatarMenu)} className="avatar-dropdown flex h-8 w-8 items-center justify-center border-2 border-black rounded-full bg-blue-600 text-white font-black text-sm uppercase hover:bg-blue-700 transition-colors duration-200 active:scale-95">{userInitial}</button>{showAvatarMenu&&<div className="avatar-dropdown absolute right-0 mt-2 w-48 border-2 border-black bg-white shadow-[4px_4px_0_#000] z-50"><div className="px-3 py-2 border-b-2 border-black bg-blue-50"><p className="mono text-[10px] font-bold uppercase text-black">{userName}</p>{userEmail&&<p className="mono text-[10px] font-bold uppercase text-gray-600">{userEmail}</p>}</div><button onClick={()=>{setShowAvatarMenu(false);setShowProfile(true)}} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><UserRound size={14}/> View Profile</button><button onClick={logout} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><LogOut size={14}/> Logout</button></div>}</div>):(<><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button></>)}</div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
       {mobileNav&&<div className="grid grid-cols-2 gap-2 border-t-2 border-black bg-white p-3 lg:hidden">{['Benefits','How it works','About Us','Sign up','Login','Join Waitlist'].map(x=><button key={x} onClick={()=>{setMobileNav(false);if(x==='Login')setView('login');else if(x==='Join Waitlist')setView('discover');else if(x==='Sign up')signup();else document.getElementById(x==='Benefits'?'benefits':x==='How it works'?'how':'about')?.scrollIntoView({behavior:'smooth'})}} className="border-2 border-black p-2 text-sm font-bold">{x}</button>)}</div>}
     </header>
-    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView}/>:view==='offers'?<Offers setView={setView}/>:view==='chat'?<Chat/>:<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
+    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView}/>:view==='offers'?<Offers setView={setView}/>:view==='chat'?<Chat/>:view==='profile'?(<Profile close={()=>setShowProfile(false)} userId={userId} userName={userName} userEmail={userEmail} userBio={userBio} teachSkills={teachSkills} learnSkills={learnSkills} setUserName={setUserName} setUserBio={setUserBio} setTeachSkills={setTeachSkills} setLearnSkills={setLearnSkills} setEditMode={setEditMode} editMode={editMode}/>):<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
       <div className="mt-10 grid gap-4 border-t-2 border-black pt-6 md:grid-cols-3" id="benefits"><div><Tag blue>WHY SKILLSWAP</Tag><h2 className="mt-2 text-xl font-black">Your skills have value.</h2><p className="mt-1 text-sm text-gray-600">Trade knowledge, grow confidence, and meet curious people.</p></div><div id="how"><Tag>HOW IT WORKS</Tag><h2 className="mt-2 text-xl font-black">Find. Exchange. Grow.</h2><p className="mt-1 text-sm text-gray-600">Discover a partner, agree on a skill swap, then learn together.</p></div><div id="about"><Tag>ABOUT US</Tag><h2 className="mt-2 text-xl font-black">Learning is better shared.</h2><p className="mt-1 text-sm text-gray-600">SkillSwap makes peer-to-peer learning accessible to everyone.</p></div></div>
     </main></div>
     <Journey view={view} setView={setView}/>
+    {showProfile && (
+      <Profile
+        close={()=>setShowProfile(false)}
+        userId={userId}
+        userName={userName}
+        userEmail={userEmail}
+        userBio={userBio}
+        teachSkills={teachSkills}
+        learnSkills={learnSkills}
+        setUserName={setUserName}
+        setUserBio={setUserBio}
+        setTeachSkills={setTeachSkills}
+        setLearnSkills={setLearnSkills}
+      />
+    )}
     {toast&&<div role="status" className="fixed right-4 top-20 z-50 border-2 border-black bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-[4px_4px_0_#000]">{toast}</div>}
   </div>
 }
