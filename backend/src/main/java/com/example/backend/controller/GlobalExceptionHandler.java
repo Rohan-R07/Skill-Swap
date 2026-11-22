@@ -6,6 +6,8 @@ import com.example.backend.service.EmailAlreadyExistsException;
 import com.example.backend.service.InvalidCredentialsException;
 import com.example.backend.service.OfferAccessDeniedException;
 import com.example.backend.service.OfferAlreadyProcessedException;
+import com.example.backend.service.ChatAccessDeniedException;
+import com.example.backend.service.ChatNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -52,6 +54,16 @@ public class GlobalExceptionHandler {
         response.setSuccess(false);
         response.setMessage(ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(ChatNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleChatNotFound(ChatNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ChatAccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleChatAccessDenied(ChatAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

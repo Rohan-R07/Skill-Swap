@@ -551,7 +551,7 @@ Returns a list of `ExchangeOfferResponse` objects.
 
 #### PUT /api/offers/{offerId}/accept/{userId}
 
-Accepts a PENDING exchange offer. Only the receiver can accept. Changes status to `ACCEPTED`.
+Accepts a PENDING exchange offer. Only the receiver can accept. Changes status to `ACCEPTED` and creates one persistent chat conversation for the offer. Repeating the request for an already accepted offer reuses its conversation.
 
 **Path Parameters:**
 
@@ -569,6 +569,44 @@ Returns the updated `ExchangeOfferResponse` object.
 | `403 Forbidden` | Only the receiver can accept this offer. |
 | `404 Not Found` | Offer not found. |
 | `409 Conflict` | Offer is already processed. |
+
+#### Chat APIs
+
+Chats are available only for accepted exchange offers. Conversation records are uniquely associated with their offer; older accepted offers are backfilled when either participant requests their conversation list.
+
+`GET /api/chats/{userId}` lists that user's conversations, ordered by recent activity:
+
+```json
+[
+  {
+    "id": 12,
+    "otherParticipantId": 2,
+    "otherParticipantName": "Bob",
+    "otherParticipantBio": "Designer",
+    "exchangeOfferId": 8,
+    "offeredSkillName": "Java",
+    "requestedSkillName": "Design",
+    "latestMessage": "Let's plan a session.",
+    "latestMessageAt": "2026-11-22T10:30:00",
+    "updatedAt": "2026-11-22T10:30:00"
+  }
+]
+```
+
+`GET /api/chats/{conversationId}/messages?userId={userId}&page=0&size=50` returns one chronological page. Page size is capped at 100.
+
+`POST /api/chats/{conversationId}/messages` saves a message and updates conversation activity:
+
+```json
+{
+  "senderId": 1,
+  "content": "Hey, when can we start our skill exchange?"
+}
+```
+
+The response contains the saved message ID, conversation ID, sender ID/name, content, and creation timestamp. Empty/whitespace-only content and content longer than 2,000 characters are rejected. Nonparticipants receive `403`; missing conversations/users receive `404`.
+
+**Authentication limitation:** Chat endpoints validate that the supplied user ID belongs to the conversation, but the current application has no authenticated session or JWT. A client can therefore claim another participant's ID. Participant checks are not a substitute for authentication; production deployment should bind the caller identity to a verified session/token.
 
 #### PUT /api/offers/{offerId}/reject/{userId}
 
@@ -838,7 +876,7 @@ Skill-Swap/
 
 ### Frontend API Base URL
 
-The frontend currently uses a hardcoded backend base URL of `http://localhost:8080` in `frontend/src/App.jsx`. Production API URL configuration via environment variables is pending.
+All frontend API requests use the shared base URL in `frontend/src/api.js`. Set `VITE_API_BASE_URL` to the backend origin for production. The `http://localhost:8080` fallback is enabled only by Vite during local development.
 
 ---
 
@@ -906,7 +944,7 @@ No production URLs are available. Deployments are planned but not yet executed.
 - Proper individual user profile view from Discover (currently shows an alert).
 - Fully integrated exchange offer workflow on the frontend.
 - Dedicated Skill Rooms page and backend APIs.
-- Chat functionality (WebSocket dependency declared but not implemented).
+- Persistent one-to-one chat for accepted exchange offers, with paginated REST history and four-second polling.
 - Production deployment (Render backend, Vercel frontend).
 - Production authentication and authorization (JWT/session).
 - Additional discovery filters.
@@ -919,7 +957,7 @@ No production URLs are available. Deployments are planned but not yet executed.
 The following items are clearly labeled as future work and are **not** part of the current implementation:
 
 - **Skill Rooms:** Dedicated room functionality and backend APIs.
-- **Chat:** Real-time messaging using Spring WebSocket.
+- **Chat:** Real-time delivery, read receipts, and stronger session/JWT authorization.
 - **Complete Exchange Offer Workflow:** Full frontend integration for creating, accepting, and rejecting offers.
 - **Production Authentication:** JWT or session-based secured API access.
 - **Production Deployment:** Render backend and Vercel frontend deployment.

@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+const API_BASE_URL = (configuredApiBaseUrl || (import.meta.env.DEV ? 'http://localhost:8080' : '')).replace(/\/+$/, '')
 
 export { API_BASE_URL }
 
@@ -47,4 +48,27 @@ export async function rejectOffer(offerId, userId) {
     throw new Error(errData.message || 'Failed to reject offer')
   }
   return await res.json()
+}
+
+async function chatRequest(url, options) {
+  const res = await fetch(url, options)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.message || Object.values(data).find(value => typeof value === 'string') || 'Chat request failed')
+  return data
+}
+
+export function getConversations(userId) {
+  return chatRequest(`${API_BASE_URL}/api/chats/${userId}`)
+}
+
+export function getChatMessages(conversationId, userId, page = 0, size = 50) {
+  return chatRequest(`${API_BASE_URL}/api/chats/${conversationId}/messages?userId=${userId}&page=${page}&size=${size}`)
+}
+
+export function sendChatMessage(conversationId, senderId, content) {
+  return chatRequest(`${API_BASE_URL}/api/chats/${conversationId}/messages`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({senderId, content})
+  })
 }

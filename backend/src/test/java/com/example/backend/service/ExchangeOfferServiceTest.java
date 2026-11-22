@@ -42,6 +42,9 @@ class ExchangeOfferServiceTest {
     @Mock
     private ExchangeOfferRepository exchangeOfferRepository;
 
+    @Mock
+    private ChatService chatService;
+
     @InjectMocks
     private ExchangeOfferService exchangeOfferService;
 
@@ -345,6 +348,7 @@ class ExchangeOfferServiceTest {
         assertTrue(response.isSuccess());
         assertEquals("ACCEPTED", response.getStatus());
         verify(exchangeOfferRepository, times(1)).save(offer);
+        verify(chatService, times(1)).ensureConversation(1L);
     }
 
     @Test
@@ -363,18 +367,21 @@ class ExchangeOfferServiceTest {
     }
 
     @Test
-    void acceptOffer_alreadyProcessed_rejected() {
+    void acceptOffer_alreadyAccepted_reusesConversation() {
         ExchangeOffer offer = new ExchangeOffer();
         offer.setId(1L);
         offer.setSender(sender);
         offer.setReceiver(receiver);
+        offer.setOfferedSkill(offeredSkill);
+        offer.setRequestedSkill(requestedSkill);
         offer.setStatus(OfferStatus.ACCEPTED);
 
         when(exchangeOfferRepository.findById(1L)).thenReturn(Optional.of(offer));
 
-        OfferAlreadyProcessedException ex = assertThrows(OfferAlreadyProcessedException.class,
-                () -> exchangeOfferService.acceptOffer(1L, 2L));
-        assertTrue(ex.getMessage().contains("ACCEPTED"));
+        ExchangeOfferResponse response = exchangeOfferService.acceptOffer(1L, 2L);
+        assertEquals("ACCEPTED", response.getStatus());
+        verify(exchangeOfferRepository, never()).save(any(ExchangeOffer.class));
+        verify(chatService).ensureConversation(1L);
     }
 
     @Test

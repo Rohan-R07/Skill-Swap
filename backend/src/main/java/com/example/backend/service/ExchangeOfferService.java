@@ -24,15 +24,18 @@ public class ExchangeOfferService {
     private final SkillRepository skillRepository;
     private final UserSkillRepository userSkillRepository;
     private final ExchangeOfferRepository exchangeOfferRepository;
+    private final ChatService chatService;
 
     public ExchangeOfferService(UserRepository userRepository,
                                 SkillRepository skillRepository,
                                 UserSkillRepository userSkillRepository,
-                                ExchangeOfferRepository exchangeOfferRepository) {
+                                ExchangeOfferRepository exchangeOfferRepository,
+                                ChatService chatService) {
         this.userRepository = userRepository;
         this.skillRepository = skillRepository;
         this.userSkillRepository = userSkillRepository;
         this.exchangeOfferRepository = exchangeOfferRepository;
+        this.chatService = chatService;
     }
 
     @Transactional
@@ -77,12 +80,18 @@ public class ExchangeOfferService {
             throw new OfferAccessDeniedException("Only the receiver can accept this offer");
         }
 
+        if (offer.getStatus() == OfferStatus.ACCEPTED) {
+            chatService.ensureConversation(offerId);
+            return toResponse(offer);
+        }
+
         if (offer.getStatus() != OfferStatus.PENDING) {
             throw new OfferAlreadyProcessedException("Offer is already " + offer.getStatus() + " and cannot be accepted");
         }
 
         offer.setStatus(OfferStatus.ACCEPTED);
         ExchangeOffer saved = exchangeOfferRepository.save(offer);
+        chatService.ensureConversation(saved.getId());
         return toResponse(saved);
     }
 

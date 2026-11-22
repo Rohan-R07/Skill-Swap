@@ -15,13 +15,17 @@ backend/README.md
 backend/logs/
 backend/*.log
 
-# Frontend
+# Frontend (paths are lowercase in the Git index)
 frontend/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.*
 frontend/.DS_Store
 frontend/Thumbs.db
+
+# Root-level environment files
+.env
+.env.*
 
 # OS generated files
 .DS_Store
