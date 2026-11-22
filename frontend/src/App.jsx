@@ -39,8 +39,16 @@ function Login({onLogin,onSignup}) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
       })
+      if (!res.ok) {
+        let errorData
+        try {
+          errorData = await res.json()
+        } catch (e) {
+          throw new Error(`Server error: ${res.status}`)
+        }
+        throw new Error(errorData.message || (mode === 'register' ? 'Registration failed' : 'Login failed'))
+      }
       const data = await res.json()
-      if (!res.ok) throw new Error(data.message || (mode === 'register' ? 'Registration failed' : 'Login failed'))
       onLogin(data.name, data.email, data.id || null, data.bio || '')
     } catch (err) {
       setError(err.message)
