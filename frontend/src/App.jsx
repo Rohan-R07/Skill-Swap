@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { API_BASE_URL } from './api.js'
+import { API_BASE_URL, createOffer, getIncomingOffers, getOutgoingOffers, acceptOffer, rejectOffer } from './api.js'
 import {
   ArrowLeftRight, Menu, X, Home, MessageCircle, Users, Settings, CircleHelp,
   LogOut, Search, Send, Paperclip, Smile, Music2, Code2,
@@ -11,11 +11,6 @@ const chats = [
   { name:'Anita Desai', initials:'AD', skill:'React ⇄ Figma', online:true, messages:[['them','Hey! Great to connect. What would you like to start with?'],['you','Hi Anita! I would love to learn Figma basics. I can help you with React.'],['them','Perfect! Let’s plan a first session this week.']] },
   { name:'Karthik Raj', initials:'KR', skill:'UI Design ⇄ React', online:true, messages:[['them','I checked out your profile. Your skill goals look great!'],['you','Thanks! Excited to exchange knowledge.']] },
   { name:'Meera Nair', initials:'MN', skill:'Python ⇄ Illustration', online:false, messages:[['them','Would Saturday afternoon work for you?']] },
-]
-const offers = [
-  { name:'Anita Desai', initials:'AD', status:'ACTIVE', teach:'React', learn:'Figma', date:'Started 2 days ago' },
-  { name:'Karthik Raj', initials:'KR', status:'ACTIVE', teach:'UI Design', learn:'JavaScript', date:'Started 5 days ago' },
-  { name:'Meera Nair', initials:'MN', status:'ACTIVE', teach:'Python', learn:'Illustration', date:'Started yesterday' },
 ]
 const Button = ({children, onClick, primary=false, className=''}) => <button onClick={onClick} className={`press inline-flex items-center justify-center gap-2 border-2 border-black px-4 py-2.5 text-sm font-extrabold uppercase tracking-wide ${primary?'bg-blue-600 text-white hard-sm':'bg-white text-black hard-sm'} ${className}`}>{children}</button>
 const Tag = ({children, blue=false}) => <span className={`mono inline-flex items-center border-2 border-black px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${blue?'bg-blue-100':'bg-white'}`}>{children}</span>
@@ -126,10 +121,10 @@ function PersonCard({user,onOffer,onProfile,userId}) {
       {teachNames.length > 0 && <div className="flex flex-wrap items-center gap-2"><Tag blue>Can teach: {teachNames.join(', ')}</Tag></div>}
       {learnNames.length > 0 && <div className="flex flex-wrap items-center gap-2"><Tag>Wants to learn: {learnNames.join(', ')}</Tag></div>}
     </div>
-    <div className="mt-5 flex flex-wrap gap-2"><Button onClick={()=>onProfile(user)}>View Profile</Button><Button primary onClick={isSelf?undefined:()=>onOffer(user.id)} disabled={isSelf} className={isSelf?'border-2 border-black bg-gray-200 text-gray-500 cursor-not-allowed hover:bg-gray-200 active:bg-gray-200':''} title={isSelf?'You cannot send an offer to yourself.':undefined}>Send Exchange Offer</Button></div>
+    <div className="mt-5 flex flex-wrap gap-2"><Button onClick={()=>onProfile(user)}>View Profile</Button><Button primary onClick={isSelf?undefined:()=>onOffer(user)} disabled={isSelf} className={isSelf?'border-2 border-black bg-gray-200 text-gray-500 cursor-not-allowed hover:bg-gray-200 active:bg-gray-200':''} title={isSelf?'You cannot send an offer to yourself.':undefined}>Send Exchange Offer</Button></div>
   </article>
 }
-function Discover({setView,userId}) {
+function Discover({setView,userId,onOffer}) {
   const [query,setQuery]=useState('')
   const [users,setUsers]=useState([])
   const [loading,setLoading]=useState(false)
@@ -189,21 +184,177 @@ function Discover({setView,userId}) {
           {users.length === 0 ? (
             <div className="border-2 border-dashed border-black bg-blue-50 p-10 text-center"><Search className="mx-auto mb-3"/><h3 className="font-black">No users found.</h3>{query && <p className="mt-1 text-sm text-gray-600">No users found matching your search.</p>}{!query && <p className="mt-1 text-sm text-gray-600">No registered users available.</p>}</div>
           ) : (
-            users.map(u=><PersonCard key={u.id} user={u} userId={userId} onOffer={()=>setView('offers')} onProfile={(user)=>alert(`${user.name}\n${user.bio||'No bio available'}`)}/>)
+            users.map(u=><PersonCard key={u.id} user={u} userId={userId} onOffer={onOffer} onProfile={(user)=>alert(`${user.name}\n${user.bio||'No bio available'}`)}/>)
           )}
         </div>
       </>
     )}
   </div>
 }
-function Offers({setView}) {
-  const [tab,setTab]=useState('Active Exchanges (3)')
-  const tabs=['Received Offers (2)','Sent Offers (1)','Active Exchanges (3)','Completed (5)']
-  const rows=tab.startsWith('Active')?offers:tab.startsWith('Received')?[{...offers[0],status:'NEW OFFER'}]:tab.startsWith('Sent')?[{...offers[1],status:'PENDING'}]:[{...offers[2],status:'COMPLETED'}]
-  return <div><p className="mono text-xs font-bold uppercase text-blue-700">Your learning journey</p><h1 className="mb-6 text-4xl font-black tracking-tight">Exchange offers<span className="text-blue-600">.</span></h1>
-    <div className="mb-6 flex gap-2 overflow-x-auto pb-3">{tabs.map(t=><button key={t} onClick={()=>setTab(t)} className={`whitespace-nowrap border-2 border-black px-3 py-2 text-xs font-extrabold ${tab===t?'bg-blue-600 text-white shadow-[2px_2px_0_#000]':'bg-white hover:bg-blue-50'}`}>{t}</button>)}</div>
-    <div className="space-y-4">{rows.map((o,i)=><article key={o.name} className="border-2 border-black bg-white p-5 shadow-[4px_4px_0_#000]"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><Avatar initials={o.initials}/><div><h3 className="font-black">{o.name}</h3><p className="text-xs text-gray-500">{o.date}</p></div></div><Tag blue>{o.status}</Tag></div><div className="mt-5 grid items-center gap-3 border-2 border-black bg-blue-50 p-4 sm:grid-cols-[1fr_auto_1fr]"><div><p className="mono text-[10px] font-bold uppercase text-gray-500">You teach</p><p className="mt-1 text-lg font-black"><Code2 className="mr-1 inline text-blue-700"/>{o.teach}</p></div><ArrowLeftRight className="mx-auto text-blue-700" size={25}/><div><p className="mono text-[10px] font-bold uppercase text-gray-500">They teach</p><p className="mt-1 text-lg font-black"><Palette className="mr-1 inline text-blue-700"/>{o.learn}</p></div></div><div className="mt-4 flex flex-wrap gap-2"><Button primary onClick={()=>setView('chat')}><MessageCircle size={15}/> Open Chat</Button><Button onClick={()=>alert(`Exchange with ${o.name}\nYou teach ${o.teach}; they teach ${o.learn}.`)}>View Details</Button>{tab.startsWith('Received')&&<Button onClick={()=>alert('Offer accepted! You can coordinate in Messages.')}>Accept Offer <Check size={15}/></Button>}</div></article>)}</div>
-  </div>
+function Offers({userId, refreshKey, onToast}) {
+  const [tab, setTab] = useState('incoming')
+  const [incomingOffers, setIncomingOffers] = useState([])
+  const [outgoingOffers, setOutgoingOffers] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [submittingOfferId, setSubmittingOfferId] = useState(null)
+
+  const fetchOffers = async () => {
+    if (!userId) return
+    setLoading(true)
+    setError('')
+    try {
+      const [incomingResult, outgoingResult] = await Promise.allSettled([
+        getIncomingOffers(userId),
+        getOutgoingOffers(userId)
+      ])
+      setIncomingOffers(incomingResult.status === 'fulfilled' ? incomingResult.value : [])
+      setOutgoingOffers(outgoingResult.status === 'fulfilled' ? outgoingResult.value : [])
+      const failures = [incomingResult, outgoingResult]
+        .filter(result => result.status === 'rejected')
+        .map(result => result.reason?.message || 'Failed to load offers')
+      if (failures.length) setError(failures.join('. '))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (userId) fetchOffers()
+    else setError('Your account ID is unavailable. Please log in again to load exchange offers.')
+  }, [userId, refreshKey])
+
+  const handleAccept = async (offerId) => {
+    if (!userId) return
+    setSubmittingOfferId(offerId)
+    try {
+      await acceptOffer(offerId, userId)
+      onToast('Offer accepted!')
+      await fetchOffers()
+    } catch (err) {
+      onToast(err.message || 'Failed to accept offer')
+    } finally {
+      setSubmittingOfferId(null)
+    }
+  }
+
+  const handleReject = async (offerId) => {
+    if (!userId) return
+    setSubmittingOfferId(offerId)
+    try {
+      await rejectOffer(offerId, userId)
+      onToast('Offer rejected!')
+      await fetchOffers()
+    } catch (err) {
+      onToast(err.message || 'Failed to reject offer')
+    } finally {
+      setSubmittingOfferId(null)
+    }
+  }
+
+  const offers = tab === 'incoming' ? incomingOffers : outgoingOffers
+
+  const initials = (name = '') => name.split(' ').map(n => n[0]).filter(Boolean).join('').toUpperCase()
+
+  return (
+    <div>
+      <div className="mb-6">
+        <p className="mono text-xs font-bold uppercase text-blue-700">Exchange Offers</p>
+        <h1 className="text-4xl font-black tracking-tight">Manage Exchanges<span className="text-blue-600">.</span></h1>
+      </div>
+
+      <div className="mb-6 flex gap-2">
+          <button
+          onClick={() => { setTab('incoming'); fetchOffers() }}
+          className={`whitespace-nowrap border-2 border-black px-4 py-2 text-xs font-extrabold ${tab === 'incoming' ? 'bg-blue-600 text-white shadow-[2px_2px_0_#000]' : 'bg-white hover:bg-blue-50'}`}
+        >
+          Incoming Offers
+        </button>
+        <button
+          onClick={() => { setTab('outgoing'); fetchOffers() }}
+          className={`whitespace-nowrap border-2 border-black px-4 py-2 text-xs font-extrabold ${tab === 'outgoing' ? 'bg-blue-600 text-white shadow-[2px_2px_0_#000]' : 'bg-white hover:bg-blue-50'}`}
+        >
+          Outgoing Offers
+        </button>
+      </div>
+
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <p className="mono text-xs font-bold uppercase text-blue-700">Loading offers...</p>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="flex flex-col items-center justify-center py-20 border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]">
+          <p className="mono text-xs font-bold uppercase text-red-600">{error}</p>
+          <button onClick={fetchOffers} className="mt-4 border-2 border-black bg-blue-600 text-white px-6 py-3 text-sm font-bold uppercase hover:bg-blue-700 active:scale-95">Retry</button>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-black">{tab === 'incoming' ? 'Received Offers' : 'Sent Offers'}</h2>
+          </div>
+          <div className="space-y-4">
+            {offers.length === 0 ? (
+              <div className="border-2 border-dashed border-black bg-blue-50 p-10 text-center">
+                <Search className="mx-auto mb-3" />
+                <h3 className="font-black">No offers.</h3>
+                <p className="mt-1 text-sm text-gray-600">{tab === 'incoming' ? 'No incoming exchange offers.' : 'No outgoing exchange offers.'}</p>
+              </div>
+            ) : (
+              offers.map(o => (
+                <article key={o.id} className="border-2 border-black bg-white p-5 shadow-[4px_4px_0_#000]">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar initials={initials(tab === 'incoming' ? o.senderName : o.receiverName)} />
+                      <div>
+                        <h3 className="font-black">{tab === 'incoming' ? o.senderName : o.receiverName}</h3>
+                        <p className="text-xs text-gray-500">{o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</p>
+                      </div>
+                    </div>
+                    <Tag blue>{o.status}</Tag>
+                  </div>
+                  <div className="mt-4 grid items-center gap-3 border-2 border-black bg-blue-50 p-4 sm:grid-cols-[1fr_auto_1fr]">
+                    <div>
+                      <p className="mono text-[10px] font-bold uppercase text-gray-500">You teach</p>
+                      <p className="mt-1 text-lg font-black">{o.offeredSkillName}</p>
+                    </div>
+                    <ArrowLeftRight className="mx-auto text-blue-700" size={25} />
+                    <div>
+                      <p className="mono text-[10px] font-bold uppercase text-gray-500">They teach</p>
+                      <p className="mt-1 text-lg font-black">{o.requestedSkillName}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {tab === 'incoming' && o.status === 'PENDING' && (
+                      <>
+                        <button
+                          onClick={() => handleAccept(o.id)}
+                          disabled={submittingOfferId === o.id}
+                          className={`border-2 border-black bg-blue-600 text-white px-3 py-2 text-xs font-bold uppercase hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${submittingOfferId === o.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          Accept Offer
+                        </button>
+                        <button
+                          onClick={() => handleReject(o.id)}
+                          disabled={submittingOfferId === o.id}
+                          className={`border-2 border-black bg-red-600 text-white px-3 py-2 text-xs font-bold uppercase hover:bg-red-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${submittingOfferId === o.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
 }
 function Chat({}) {
   const [active,setActive]=useState(0),[text,setText]=useState(''),[search,setSearch]=useState('')
@@ -527,8 +678,186 @@ function Profile({close, userId, userName, userEmail, userBio, teachSkills, lear
   )
 }
 
+function OfferCreateModal({close, onCreated, onError, userId, receiver}) {
+  const [offerTeachSkills, setOfferTeachSkills] = useState([])
+  const [offerLearnSkills, setOfferLearnSkills] = useState([])
+  const [selectedOfferedSkillId, setSelectedOfferedSkillId] = useState(null)
+  const [selectedRequestedSkillId, setSelectedRequestedSkillId] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [skillsLoaded, setSkillsLoaded] = useState(false)
+  const [skillsError, setSkillsError] = useState('')
+  const [receiverSkills, setReceiverSkills] = useState([])
+
+  useEffect(() => {
+    if (!userId || !receiver) return
+    fetchSkills()
+  }, [userId, receiver])
+
+  const fetchSkills = async () => {
+    if (!userId) return
+    setSkillsLoaded(false)
+    setSkillsError('')
+    try {
+      const [senderRes, receiverRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/users/${userId}/skills`),
+        fetch(`${API_BASE_URL}/api/users/${receiver.id}/skills`)
+      ])
+      if (!senderRes.ok || !receiverRes.ok) throw new Error('Failed to load skills needed for an offer')
+      const [data, otherSkills] = await Promise.all([senderRes.json(), receiverRes.json()])
+      setReceiverSkills(otherSkills)
+      setOfferTeachSkills(data.filter(us => us.type === 'TEACH').map(us => ({
+        userSkillId: us.id,
+        id: us.skill.id,
+        skillName: us.skill.name,
+        skillCategory: us.skill.category,
+        type: us.type
+      })))
+      setOfferLearnSkills(data.filter(us => us.type === 'LEARN').map(us => ({
+        userSkillId: us.id,
+        id: us.skill.id,
+        skillName: us.skill.name,
+        skillCategory: us.skill.category,
+        type: us.type
+      })))
+      setSkillsLoaded(true)
+    } catch (err) {
+      setSkillsError(err.message || 'Failed to load skills')
+      setSkillsLoaded(true)
+    } finally {
+      setSkillsLoaded(true)
+    }
+  }
+
+  const handleCreate = async () => {
+    if (!selectedOfferedSkillId || !selectedRequestedSkillId) return
+    if (!userId || !receiver) return
+    setLoading(true)
+    try {
+      await createOffer(userId, receiver.id, selectedOfferedSkillId, selectedRequestedSkillId)
+      onCreated()
+      close()
+    } catch (err) {
+      onError(err.message || 'Failed to send offer')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const matchingRequestedSkills = offerLearnSkills.filter(skill =>
+    receiverSkills.some(other => other.type === 'TEACH' && String(other.skill.id) === String(skill.id)) &&
+    receiverSkills.some(other => other.type === 'LEARN' && String(other.skill.id) === String(selectedOfferedSkillId))
+  )
+
+  if (!skillsLoaded) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]">
+          <p className="mono text-xs font-bold uppercase text-blue-700">Loading skills...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (skillsError) {
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]">
+        <p role="alert" className="mono text-xs font-bold uppercase text-red-600">{skillsError}</p>
+        <button onClick={fetchSkills} className="mt-4 border-2 border-black bg-blue-600 px-5 py-2 font-bold uppercase text-white">Retry</button>
+        <button onClick={close} className="ml-2 border-2 border-black px-5 py-2 font-bold uppercase">Close</button>
+      </div>
+    </div>
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={close}>
+      <div className="max-w-lg w-full border-2 border-black bg-white p-8 shadow-[8px_8px_0_#2563eb]" onClick={e => e.stopPropagation()}>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="mono text-xs font-bold uppercase tracking-widest text-blue-700">Create Exchange Offer</p>
+            <h2 className="text-2xl font-black">Send Exchange Offer<span className="text-blue-600">.</span></h2>
+          </div>
+          <button onClick={close} className="border-2 border-black p-2 hover:bg-blue-50" aria-label="Close"><X/></button>
+        </div>
+
+        <div className="mb-6">
+          <p className="mono text-xs font-bold uppercase text-gray-600">Person I am sending the offer to</p>
+          <div className="mt-2 flex items-center gap-3 border-2 border-black p-3 bg-blue-50">
+            <div className="flex h-12 w-12 items-center justify-center border-2 border-black bg-blue-600 text-white font-black text-xl uppercase">
+              {receiver.name.split(' ').map(n => n[0]).filter(Boolean).join('').toUpperCase()}
+            </div>
+            <div>
+              <h4 className="font-black">{receiver.name}</h4>
+              <p className="mono text-[10px] text-gray-600">User ID: {receiver.id}</p>
+            </div>
+          </div>
+        </div>
+
+        {skillsError && <p role="alert" className="mb-4 text-sm font-bold text-red-600">{skillsError}</p>}
+        <div className="space-y-6">
+          <div>
+            <p className="mono text-xs font-bold uppercase text-blue-700">Skill I Can Teach</p>
+            {offerTeachSkills.length === 0 ? (
+              <p className="text-[10px] text-gray-600 italic">You have no skills listed as TEACH. Add one in your profile first.</p>
+            ) : (
+              <div className="space-y-2">
+                {offerTeachSkills.map(s => (
+                  <button
+                    key={s.userSkillId}
+                    onClick={() => setSelectedOfferedSkillId(s.id)}
+                    className={`flex items-center justify-between gap-3 border-2 px-3 py-2 text-left rounded-md ${selectedOfferedSkillId === s.id ? 'border-blue-600 bg-blue-50' : 'border-black bg-white hover:border-blue-600'}`}
+                  >
+                    <span className="text-sm font-black">{s.skillName} <span className="mono text-[9px] text-gray-500">({s.skillCategory})</span></span>
+                    {selectedOfferedSkillId === s.id && <Check size={14} className="text-blue-600 font-black"/>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <p className="mono text-xs font-bold uppercase text-pink-600">Skill I Want to Learn</p>
+            {matchingRequestedSkills.length === 0 ? (
+              <p className="text-[10px] text-gray-600 italic">No matching skill pairs are available. You and this person need complementary teach and learn skills.</p>
+            ) : (
+              <div className="space-y-2">
+                {matchingRequestedSkills.map(s => (
+                  <button
+                    key={s.userSkillId}
+                    onClick={() => setSelectedRequestedSkillId(s.id)}
+                    className={`flex items-center justify-between gap-3 border-2 px-3 py-2 text-left rounded-md ${selectedRequestedSkillId === s.id ? 'border-pink-600 bg-pink-50' : 'border-black bg-white hover:border-pink-600'}`}
+                  >
+                    <span className="text-sm font-black">{s.skillName} <span className="mono text-[9px] text-gray-500">({s.skillCategory})</span></span>
+                    {selectedRequestedSkillId === s.id && <Check size={14} className="text-pink-600 font-black"/>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-8 flex gap-3">
+            <button
+              onClick={close}
+              className="flex-1 border-2 border-black px-4 py-3 text-sm font-bold uppercase hover:bg-blue-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={loading || !selectedOfferedSkillId || !selectedRequestedSkillId || !matchingRequestedSkills.some(skill => String(skill.id) === String(selectedRequestedSkillId))}
+              className="flex-1 border-2 border-black bg-blue-600 text-white px-4 py-3 text-sm font-bold uppercase hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Sending...' : 'Send Exchange Offer'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
-  const [view,setView]=useState('login'),[mobileNav,setMobileNav]=useState(false),[toast,setToast]=useState('')
+  const [view,setView]=useState('login')
+  const [mobileNav,setMobileNav]=useState(false)
   const [userId,setUserId]=useState(null)
   const [userName,setUserName]=useState('')
   const [userEmail,setUserEmail]=useState('')
@@ -542,6 +871,10 @@ function App() {
   const [learnSkills,setLearnSkills]=useState([])
   const [newSkillName,setNewSkillName]=useState('')
   const [newSkillType,setNewSkillType]=useState('TEACH')
+  const [offerReceiver,setOfferReceiver]=useState(null)
+  const [showOfferModal,setShowOfferModal]=useState(false)
+  const [offersRefreshKey,setOffersRefreshKey]=useState(0)
+  const [toast,setToast]=useState('')
 
   useEffect(()=>{
     try {
@@ -587,6 +920,14 @@ function App() {
     setToast('Logged out')
     setTimeout(()=>setToast(''),2000)
   }
+
+  const openOfferModal=(receiver)=>{
+    if(!userId) return
+    if(String(receiver.id)===String(userId)) return
+    setOfferReceiver(receiver)
+    setShowOfferModal(true)
+  }
+
   const userInitial=userName?userName.charAt(0).toUpperCase():'?'
   useEffect(()=>{
     const handleClickOutside=(e)=>{if(showAvatarMenu&&!e.target.closest('.avatar-dropdown'))setShowAvatarMenu(false);if(showProfile&&!e.target.closest('.profile-panel'))setShowProfile(false)}
@@ -601,7 +942,7 @@ function App() {
     <header className="sticky top-0 z-40 border-b-2 border-black bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3"><button onClick={()=>setView('dashboard')}><Logo small/></button><nav className="hidden items-center gap-5 lg:flex"><button onClick={()=>document.getElementById('benefits')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">Benefits</button><button onClick={()=>document.getElementById('how')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">How it works</button><button onClick={()=>document.getElementById('about')?.scrollIntoView({behavior:'smooth'})} className="text-sm font-bold hover:text-blue-700">About Us</button></nav><div className="hidden items-center gap-2 sm:flex"><button onClick={()=>setView('discover')} className="px-3 py-2 text-xs font-extrabold uppercase">Join Waitlist</button>{userName?(<div className="relative"><button onClick={()=>setShowAvatarMenu(!showAvatarMenu)} className="avatar-dropdown flex h-8 w-8 items-center justify-center border-2 border-black rounded-full bg-blue-600 text-white font-black text-sm uppercase hover:bg-blue-700 transition-colors duration-200 active:scale-95">{userInitial}</button>{showAvatarMenu&&<div className="avatar-dropdown absolute right-0 mt-2 w-48 border-2 border-black bg-white shadow-[4px_4px_0_#000] z-50"><div className="px-3 py-2 border-b-2 border-black bg-blue-50"><p className="mono text-[10px] font-bold uppercase text-black">{userName}</p>{userEmail&&<p className="mono text-[10px] font-bold uppercase text-gray-600">{userEmail}</p>}</div><button onClick={()=>{setShowAvatarMenu(false);setShowProfile(true)}} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><UserRound size={14}/> View Profile</button><button onClick={logout} className="w-full flex items-center gap-2 border-t-2 border-black px-3 py-2 text-xs font-bold uppercase hover:bg-blue-50 text-left"><LogOut size={14}/> Logout</button></div>}</div>):(<><button onClick={signup} className="px-3 py-2 text-xs font-extrabold uppercase">Sign up</button><button onClick={()=>setView('login')} className="px-3 py-2 text-xs font-extrabold uppercase">Login</button></>)}</div><button className="border-2 border-black p-2 lg:hidden" onClick={()=>setMobileNav(!mobileNav)} aria-label="Toggle navigation">{mobileNav?<X/>:<Menu/>}</button></div>
       {mobileNav&&<div className="grid grid-cols-2 gap-2 border-t-2 border-black bg-white p-3 lg:hidden">{['Benefits','How it works','About Us','Sign up','Login','Join Waitlist'].map(x=><button key={x} onClick={()=>{setMobileNav(false);if(x==='Login')setView('login');else if(x==='Join Waitlist')setView('discover');else if(x==='Sign up')signup();else document.getElementById(x==='Benefits'?'benefits':x==='How it works'?'how':'about')?.scrollIntoView({behavior:'smooth'})}} className="border-2 border-black p-2 text-sm font-bold">{x}</button>)}</div>}
     </header>
-    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView} userId={userId}/>:view==='offers'?<Offers setView={setView}/>:view==='chat'?<Chat/>:view==='profile'?(<Profile close={()=>setShowProfile(false)} userId={userId} userName={userName} userEmail={userEmail} userBio={userBio} teachSkills={teachSkills} learnSkills={learnSkills} setUserName={setUserName} setUserBio={setUserBio} setTeachSkills={setTeachSkills} setLearnSkills={setLearnSkills} setEditMode={setEditMode} editMode={editMode}/>):<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
+    <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[230px_1fr]"><div className="hidden lg:block"><Sidebar view={view} setView={setView} logout={()=>setView('login')}/></div><main className="min-w-0">{view==='dashboard'?<Dashboard setView={setView}/>:view==='discover'?<Discover setView={setView} userId={userId} onOffer={openOfferModal}/>:view==='offers'?<Offers userId={userId} refreshKey={offersRefreshKey} onToast={(message)=>{setToast(message);setTimeout(()=>setToast(''),2500)}}/>:view==='chat'?<Chat/>:view==='profile'?(<Profile close={()=>setShowProfile(false)} userId={userId} userName={userName} userEmail={userEmail} userBio={userBio} teachSkills={teachSkills} learnSkills={learnSkills} setUserName={setUserName} setUserBio={setUserBio} setTeachSkills={setTeachSkills} setLearnSkills={setLearnSkills} setEditMode={setEditMode} editMode={editMode}/>):<div className="border-2 border-black bg-white p-8 shadow-[4px_4px_0_#000]"><h1 className="text-3xl font-black">{titles[view]||'SkillSwap'}</h1><p className="mt-2 text-gray-600">This section is part of the interactive prototype. Explore Discover, Offers and Messages to try the main exchange journey.</p><Button primary onClick={()=>setView('discover')} className="mt-5">Explore partners</Button></div>}
       <div className="mt-10 grid gap-4 border-t-2 border-black pt-6 md:grid-cols-3" id="benefits"><div><Tag blue>WHY SKILLSWAP</Tag><h2 className="mt-2 text-xl font-black">Your skills have value.</h2><p className="mt-1 text-sm text-gray-600">Trade knowledge, grow confidence, and meet curious people.</p></div><div id="how"><Tag>HOW IT WORKS</Tag><h2 className="mt-2 text-xl font-black">Find. Exchange. Grow.</h2><p className="mt-1 text-sm text-gray-600">Discover a partner, agree on a skill swap, then learn together.</p></div><div id="about"><Tag>ABOUT US</Tag><h2 className="mt-2 text-xl font-black">Learning is better shared.</h2><p className="mt-1 text-sm text-gray-600">SkillSwap makes peer-to-peer learning accessible to everyone.</p></div></div>
     </main></div>
     <Journey view={view} setView={setView}/>
@@ -618,6 +959,15 @@ function App() {
         setUserBio={setUserBio}
         setTeachSkills={setTeachSkills}
         setLearnSkills={setLearnSkills}
+      />
+    )}
+    {showOfferModal && (
+      <OfferCreateModal
+        close={()=>setShowOfferModal(false)}
+        onCreated={()=>{setOffersRefreshKey(key=>key+1);setToast('Offer sent successfully!');setTimeout(()=>setToast(''),2500)}}
+        onError={(message)=>{setToast(message);setTimeout(()=>setToast(''),3500)}}
+        userId={userId}
+        receiver={offerReceiver}
       />
     )}
     {toast&&<div role="status" className="fixed right-4 top-20 z-50 border-2 border-black bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-[4px_4px_0_#000]">{toast}</div>}
